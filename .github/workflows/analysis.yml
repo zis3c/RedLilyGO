@@ -265,7 +265,7 @@ jobs:
         with:
           upload: false
           output: sarif-results
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: codeql-${{ matrix.language }}
           path: sarif-results
