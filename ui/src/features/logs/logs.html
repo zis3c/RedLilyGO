@@ -1,0 +1,30 @@
+                <!-- Device log viewer and filters. -->
+                <div id="tab-6" class="tab-pane w-full max-w-4xl mx-auto">
+                    <div class="logs-card bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col shadow-none overflow-hidden">
+                        <div class="logs-toolbar border-b border-zinc-800 shrink-0 bg-zinc-950 rounded-t-xl">
+                            <div class="logs-mark" title="System Logs"><i class="fa-solid fa-terminal text-[11px]"></i></div>
+                            <div class="logs-search relative">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="logFilterInput" placeholder="Search logs..." aria-label="Search logs">
+                            </div>
+                            <select id="logCategoryFilter" class="cdrop-select" title="Log category">
+                                <option value="all">All logs</option>
+                                <option value="system">System</option>
+                                <option value="marauder">Marauder</option>
+                                <option value="ducky">Ducky</option>
+                                <option value="agent">Agent</option>
+                            </select>
+                            <div class="logs-actions">
+                                <button type="button" onclick="window.loadSavedLog()" title="Load saved SD log"><i class="fa-solid fa-hard-drive"></i><span>SD Log</span></button>
+                                <label title="Auto-scroll toggle"><input type="checkbox" id="autoScrollLogs" class="hidden" checked=""><i class="fa-solid fa-angles-down text-emerald-400 transition-colors" id="autoScrollIcon"></i></label>
+                                <button type="button" onclick="window.clearRuntimeLogs()" title="Clear runtime logs" class="btn-delete"><i class="fa-solid fa-trash"></i></button>
+                                <span id="savedLogStatus" class="hidden">Live Logs</span>
+                            </div>
+                        </div>
+
+                        <!-- Scrollable log output. -->
+                        <div class="flex-1 relative min-h-0 bg-[#0A0A0C] rounded-b-xl overflow-hidden">
+                            <textarea id="logBox" class="absolute inset-0 w-full h-full bg-transparent text-emerald-400/90 font-mono text-[13px] leading-relaxed p-4 sm:p-5 resize-none outline-none border-0 custom-scrollbar" name="logBox" readonly="" placeholder="Waiting for log data..."></textarea>
+                        </div>
+                    </div>
+                </div>

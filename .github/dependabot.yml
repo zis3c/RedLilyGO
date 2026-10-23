@@ -1,0 +1,39 @@
+# Keep dependencies current. PlatformIO firmware libraries stay pinned in
+# platformio.ini and are not managed here.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR per ecosystem instead of one per dependency: fewer PRs means fewer
+    # CI runs and less Actions minutes on this private repo. Majors stay
+    # separate so they still get reviewed on their own.
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /ui
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: nuget
+    directory: /tools/Agent
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # The nuget ecosystem adds no conventional-commit type by default, so
+    # commitlint rejected its PRs with "type may not be empty". Pin one.
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      nuget:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

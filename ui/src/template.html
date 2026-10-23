@@ -1,0 +1,29 @@
+<!-- @include: layout/head.html -->
+<!-- @include: layout/sidebar.html -->
+<!-- @include: layout/mobile-header.html -->
+
+<!-- @include: features/dashboard/dashboard.html -->
+<!-- @include: features/settings/settings.html -->
+<!-- @include: features/tools/tools.html -->
+<!-- @include: features/files/files.html -->
+<!-- @include: features/remote/remote.html -->
+<!-- @include: features/logs/logs.html -->
+<!-- @include: features/about/about.html -->
+
+            </div>
+            <div class="h-6"></div>
+        </main>
+    </div>
+
+    <!-- Shared container for transient status messages. -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+
+
+    <!-- Load the compiled dashboard code after its markup is included. -->
+    <script src="/assets/js/ui.js" onerror="window.retryEmbeddedAsset(this)"></script>
+
+<!-- @include: modals/confirm-modal.html -->
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+REM RedLilyGO - Local Recon (Windows HID). Collects host/network info to %TEMP%\recon.txt and opens Notepad. Authorized testing only.
+LED 120 100 100 120
+DELAY 1500
+GUI r
+DELAY 800
+STRING cmd
+ENTER
+DELAY 1500
+STRING set R=%TEMP%\recon.txt
+ENTER
+DELAY 300
+STRING del "%R%" 2>nul
+ENTER
+DELAY 200
+STRING echo ==== RECON %DATE% %TIME% ==== > "%R%"
+ENTER
+DELAY 200
+STRING net session >nul 2>&1 && echo ADMIN || echo USER >> "%R%"
+ENTER
+DELAY 400
+STRING (echo. & echo [WHOAMI] & whoami /all) >> "%R%" 2>&1
+ENTER
+DELAY 1500
+STRING (echo. & echo [HOST] & hostname & ver) >> "%R%"
+ENTER
+DELAY 800
+STRING (echo. & echo [IPCONFIG] & ipconfig /all) >> "%R%"
+ENTER
+DELAY 1500
+STRING (echo. & echo [ARP] & arp -a) >> "%R%"
+ENTER
+DELAY 1500
+STRING (echo. & echo [NETSTAT] & netstat -ano) >> "%R%"
+ENTER
+DELAY 2000
+STRING (echo. & echo [ROUTE] & route print) >> "%R%"
+ENTER
+DELAY 1500
+STRING (echo. & echo [DNS] & ipconfig /displaydns) >> "%R%"
+ENTER
+DELAY 1500
+STRING (echo. & echo [USERS] & net user) >> "%R%"
+ENTER
+DELAY 1000
+STRING (echo.&echo ADMINS&net localgroup administrators) >> "%R%"
+ENTER
+DELAY 1000
+STRING (echo. & echo [SHARES] & net share) >> "%R%"
+ENTER
+DELAY 1000
+STRING (echo. & echo [PROCS] & tasklist) >> "%R%"
+ENTER
+DELAY 2000
+STRING (echo. & echo [WIFI] & netsh wlan show profiles) >> "%R%"
+ENTER
+DELAY 1500
+STRING notepad "%R%"
+ENTER
+LED_G

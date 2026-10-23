@@ -1,0 +1,189 @@
+name: RedLilyGO Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+  workflow_dispatch:
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Verify release version
+        shell: pwsh
+        run: .\tools\release-check.ps1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+      - name: Build firmware
+        run: pio run -e LILYGO-T-Dongle-S3
+      - name: Collect firmware third-party licenses
+        shell: bash
+        run: |
+          bundle="$RUNNER_TEMP/firmware-licenses"
+          mkdir -p "$bundle/repository" "$bundle/platformio/libraries" "$bundle/platformio/packages"
+          cp LICENSE THIRD_PARTY_NOTICES.md "$bundle/repository/"
+          cp lib/ESP32Marauder/LICENSE "$bundle/repository/ESP32Marauder-LICENSE"
+          cp ui/vnc/LICENSE* "$bundle/repository/"
+          cp ui/vnc/vendor/pako/LICENSE "$bundle/repository/pako-LICENSE"
+          find ui/content/assets/vendor -type f \( -iname 'license*' -o -iname 'copying*' -o -iname 'notice*' \) -exec cp --parents {} "$bundle/repository/" \;
+          for root in ".pio/libdeps/LILYGO-T-Dongle-S3" "$HOME/.platformio/packages"; do
+            if [ ! -d "$root" ]; then continue; fi
+            if [[ "$root" == .pio/* ]]; then target="$bundle/platformio/libraries"; else target="$bundle/platformio/packages"; fi
+            find "$root" -type f \( -iname 'license*' -o -iname 'copying*' -o -iname 'notice*' -o -iname '*thirdparty*notice*' -o -name 'library.json' -o -name 'library.properties' -o -name 'platform.json' -o -name '*.nuspec' \) -print0 |
+              while IFS= read -r -d '' file; do
+                relative="${file#"$root"/}"
+                mkdir -p "$target/$(dirname "$relative")"
+                cp "$file" "$target/$relative"
+              done
+          done
+          python -m zipfile -c firmware-third-party-licenses.zip "$bundle"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedLilyGO-firmware
+          path: .pio/build/LILYGO-T-Dongle-S3/*.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedLilyGO-firmware-third-party-licenses
+          path: firmware-third-party-licenses.zip
+
+  agent:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - name: Run Agent serial protocol test
+        run: dotnet run --project .\tools\Agent.Tests\Agent.Tests.csproj --configuration Release
+      - name: Verify release package preflight
+        run: .\tests\release_package_regressions.ps1
+      - name: Publish Agent
+        shell: pwsh
+        run: .\tools\publish-agent.ps1
+      - name: Collect Agent third-party licenses
+        shell: pwsh
+        run: |
+          $bundle = Join-Path $env:RUNNER_TEMP 'agent-licenses'
+          $packages = Join-Path $env:USERPROFILE '.nuget\packages'
+          New-Item -ItemType Directory -Path $bundle -Force | Out-Null
+          Copy-Item LICENSE, THIRD_PARTY_NOTICES.md -Destination $bundle
+          Get-ChildItem $packages -Recurse -File | Where-Object { $_.Name -match '^(LICENSE|COPYING|NOTICE)' -or $_.Extension -eq '.nuspec' } | ForEach-Object {
+            $relative = $_.FullName.Substring($packages.Length).TrimStart('\')
+            $target = Join-Path $bundle $relative
+            New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
+            Copy-Item $_.FullName $target
+          }
+          Compress-Archive -Path $bundle -DestinationPath agent-third-party-licenses.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RedLilyGO-Agent-win-x64
+          path: |
+            dist/agent-win-x64/RedLilyGO.Agent.exe
+            agent-third-party-licenses.zip
+
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify host regressions before release
+        run: |
+          python tests/firmware_regressions.py
+          python tests/macro_server_regressions.py
+          python tests/build_assets_regressions.py
+          python tests/preview_server_regressions.py
+          node tests/dependency_contract.mjs
+      - name: Run repository contracts
+        run: |
+          for check in tests/*_contract.mjs; do node "$check"; done
+      - name: Install UI dependencies
+        working-directory: ui
+        run: npm ci
+      - name: Audit UI dependencies
+        working-directory: ui
+        run: npm audit --audit-level=high
+      - name: Install Playwright browser
+        working-directory: ui
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and mobile UI tests
+        working-directory: ui
+        run: npm run test:e2e
+
+  release:
+    needs: [firmware, agent, verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - uses: actions/checkout@v4
+        with:
+          path: source
+      - name: Add release documentation
+        shell: bash
+        run: |
+          cp source/LICENSE artifacts/LICENSE
+          cp source/THIRD_PARTY_NOTICES.md artifacts/THIRD_PARTY_NOTICES.md
+          cp source/SECURITY.md artifacts/SECURITY.md
+          cp source/docs/SETUP.md artifacts/SETUP.md
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: source
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+      - name: Generate artifact checksums
+        shell: bash
+        run: |
+          mapfile -d '' artifact_files < <(find artifacts -type f \( -name '*.bin' -o -name '*.exe' -o -name '*third-party-licenses.zip' -o -name 'LICENSE' -o -name 'THIRD_PARTY_NOTICES.md' -o -name 'SECURITY.md' -o -name 'SETUP.md' \) -print0)
+          if [ "${#artifact_files[@]}" -eq 0 ]; then
+            echo 'No firmware or Agent artifacts found.' >&2
+            exit 1
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          printf '{"product":"RedLilyGO","version":"%s","gitCommit":"%s","builtAtUtc":"%s"}\n' "$version" "$GITHUB_SHA" "$(date -u +%FT%TZ)" > artifacts/release-manifest.json
+          artifact_files+=("artifacts/release-manifest.json")
+          printf '%s\0' "${artifact_files[@]}" | xargs -0 sha256sum > artifacts/SHA256SUMS.txt
+          test -s artifacts/SHA256SUMS.txt
+      # Build provenance attestation needs GitHub Advanced Security on private
+      # repositories, so it runs once the repository is public.
+      - name: Attest build provenance
+        if: ${{ github.event.repository.private == false }}
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            artifacts/**/*.bin
+            artifacts/**/*.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.bin
+            artifacts/**/*.exe
+            artifacts/**/*.zip
+            artifacts/LICENSE
+            artifacts/THIRD_PARTY_NOTICES.md
+            artifacts/SECURITY.md
+            artifacts/SETUP.md
+            artifacts/sbom.spdx.json
+            artifacts/release-manifest.json
+            artifacts/SHA256SUMS.txt

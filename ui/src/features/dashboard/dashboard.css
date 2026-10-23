@@ -1,0 +1,4 @@
+/* Dashboard-specific layout adjustments. */
+#tab-1 > .bg-zinc-900:first-child .grid > div {
+    text-align: left;
+}

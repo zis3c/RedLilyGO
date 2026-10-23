@@ -1,0 +1,103 @@
+asyncapi: 3.0.0
+info:
+  title: RedLilyGO WebSocket Channels
+  version: 0.1.0
+  description: >-
+    Documents the browser-facing WebSocket channels in this checkout. The
+    default device server uses ws:// without TLS. Handshakes apply optional
+    Basic Auth and inspect Origin or Fetch Metadata headers when supplied;
+    missing origin metadata is allowed. Basic Auth is disabled by default and
+    enabled by first-run setup. The USB CDC framing between firmware and the
+    Windows Agent is described in docs/FIRMWARE_REFERENCE.md, not modeled as a
+    WebSocket channel here.
+defaultContentType: application/json
+servers:
+  device:
+    host: 4.3.2.1
+    protocol: ws
+    description: Default device access point; plain WebSocket without TLS.
+    security:
+      - {}
+      - basicAuth: []
+channels:
+  websockify:
+    address: /websockify
+    messages:
+      browserToAgent:
+        $ref: '#/components/messages/WebSocketBinary'
+      agentToBrowser:
+        $ref: '#/components/messages/WebSocketBinary'
+  input:
+    address: /input
+    description: >-
+      Remote HID control requires USB Serial + HID mode and a ready HID device.
+      Firmware keeps one active input owner. It accepts one text JSON frame up
+      to 512 bytes.
+    messages:
+      inputAction:
+        $ref: '#/components/messages/InputAction'
+  audio:
+    address: /audio
+    description: The firmware registers this channel in every build, but audio is emitted only when a configured microphone supplies PCM data.
+    messages:
+      pcmToBrowser:
+        $ref: '#/components/messages/AudioPcm'
+operations:
+  websockifyReceive:
+    action: receive
+    channel: { $ref: '#/channels/websockify' }
+    messages:
+      - $ref: '#/channels/websockify/messages/browserToAgent'
+  websockifySend:
+    action: send
+    channel: { $ref: '#/channels/websockify' }
+    messages:
+      - $ref: '#/channels/websockify/messages/agentToBrowser'
+  inputReceive:
+    action: receive
+    channel: { $ref: '#/channels/input' }
+    messages:
+      - $ref: '#/channels/input/messages/inputAction'
+  audioSend:
+    action: send
+    channel: { $ref: '#/channels/audio' }
+    messages:
+      - $ref: '#/channels/audio/messages/pcmToBrowser'
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  messages:
+    WebSocketBinary:
+      name: VncRelayFrame
+      contentType: application/octet-stream
+      payload:
+        type: string
+        format: byte
+        description: Binary VNC relay data. A compatible Windows Agent and USB CDC connection are required.
+    InputAction:
+      name: HidInputAction
+      contentType: application/json
+      payload:
+        type: object
+        required: [type]
+        properties:
+          type: { type: string, enum: [move, scroll, button, key, release, lock, unlock] }
+          x: { type: integer, minimum: -127, maximum: 127 }
+          y: { type: integer, minimum: -127, maximum: 127 }
+          vertical: { type: integer, minimum: -127, maximum: 127 }
+          horizontal: { type: integer, minimum: -127, maximum: 127 }
+          button: { type: integer, minimum: 0, maximum: 2 }
+          pressed: { type: boolean }
+          key: { type: integer, minimum: 0, maximum: 255 }
+          modifiers: { type: integer, minimum: 0, maximum: 255 }
+        description: The lock and unlock types only add a firmware log entry. Unknown fields are ignored.
+        additionalProperties: true
+    AudioPcm:
+      name: MicrophonePcm
+      contentType: application/octet-stream
+      payload:
+        type: string
+        format: byte
+        description: Raw microphone PCM bytes sent to connected browsers when a build with a configured microphone produces data. The T-Dongle-S3 target has no microphone.

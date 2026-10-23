@@ -1,0 +1,46 @@
+<!-- Remote desktop and USB HID controls. -->
+<div id="tab-8" class="tab-pane space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 w-full max-w-4xl mx-auto mt-4">
+        <!-- Browser-based remote desktop session. -->
+        <a href="/remote" class="remote-card group">
+            <div>
+                <div class="remote-card-header">
+                    <div class="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-desktop text-[17px]"></i>
+                    </div>
+                    <div class="remote-card-action">
+                        <span>Open Desktop</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+                <h3 class="remote-card-title">Remote Desktop</h3>
+                <p class="remote-card-desc">Full desktop access via VNC for manual control.</p>
+            </div>
+            <div class="remote-card-footer">
+                <span>Requires Host Agent</span>
+                <span class="font-mono text-[10.5px]">Software Level</span>
+            </div>
+        </a>
+
+        <!-- Controls for the device's USB keyboard and mouse interface. -->
+        <a href="/remote/input" class="remote-card group">
+            <div>
+                <div class="remote-card-header">
+                    <div class="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-keyboard text-[17px]"></i>
+                    </div>
+                    <div class="remote-card-action">
+                        <span>Open Controller</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+                <h3 class="remote-card-title">USB HID Controller</h3>
+                <p class="remote-card-desc">Direct hardware mouse and keyboard emulation via USB stack without installing host software.</p>
+            </div>
+            <div class="remote-card-footer">
+                <span>Driverless</span>
+                <span class="font-mono text-[10.5px]">Hardware Level</span>
+            </div>
+        </a>
+    </div>
+</div>

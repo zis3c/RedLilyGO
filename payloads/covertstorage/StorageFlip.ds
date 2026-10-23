@@ -1,0 +1,11 @@
+REM RedLilyGO - Covert Storage Flip. First run exposes the SD; later runs mount /disk.img read-only. Authorized testing only.
+WIFI_OFF
+TFT_OFF
+LED_OFF
+DEFINE #FILE /firstrun
+IF (FILE_EXISTS() == FALSE) THEN
+  CREATE_FILE()
+  ATTACKMODE STORAGE
+ELSE
+  USB_MOUNT_DISK_READ_ONLY /disk.img
+END_IF

@@ -1,0 +1,190 @@
+                <!-- Device and dashboard settings. -->
+                <div id="tab-2" class="tab-pane space-y-5">
+                    <!-- System controls and feature toggles. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-zinc-500 text-[11px] mt-[1.5px]"></i> Control Center
+                        </div>
+                        <div class="px-5">
+                            <div class="flex items-center justify-between py-4 border-b border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Stealth Mode</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Disable all onboard LEDs to remain undetected</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="stealthToggle" onchange="window.fireQuickAction('/settings?stealth=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4 border-b border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Auto-Run Payload</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Execute default.ds automatically on boot</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="autorunToggle" onchange="window.fireQuickAction('/settings?autorun=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Power Saving Mode</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Reduce CPU frequency to save battery</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="powersaveToggle" onchange="window.fireQuickAction('/settings?powersave=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4 border-t border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Screen Saver</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Show falling text after inactivity</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="screensaverToggle" checked onchange="window.fireQuickAction('/settings?screensaver=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-t border-zinc-800 gap-4 sm:gap-2">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Channel Hop Delay</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Seconds to dwell on each channel during scans &amp; sniffs. Runtime only; resets to 1 after reboot.</p>
+                                </div>
+                                  <div class="flex items-center justify-end w-full sm:w-auto gap-3 shrink-0">
+                                      <div class="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden focus-within:border-red-500 transition-colors w-28 settings-action">
+                                          <button type="button" onclick="const e=document.getElementById('channelHopDelay'); e.value=Math.max(1, parseInt(e.value||1)-1);" class="w-9 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors cursor-pointer select-none border-r border-zinc-700">
+                                              <i class="fa-solid fa-minus text-[10px]"></i>
+                                          </button>
+                                          <input type="number" id="channelHopDelay" min="1" max="60" placeholder="-" class="w-10 h-full bg-transparent text-center text-[13px] text-white font-mono outline-none p-0 appearance-none m-0">
+                                          <button type="button" onclick="const e=document.getElementById('channelHopDelay'); e.value=Math.min(60, parseInt(e.value||1)+1);" class="w-9 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors cursor-pointer select-none border-l border-zinc-700">
+                                              <i class="fa-solid fa-plus text-[10px]"></i>
+                                          </button>
+                                      </div>
+                                       <button type="button" onclick="window.applyChannelHop()" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Apply</button>
+                                  </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-brands fa-usb text-zinc-500 text-[11px] mt-[1.5px]"></i> USB Device Type</div>
+                        <div class="px-5 py-5 space-y-5">
+                            <div class="flex items-center justify-between bg-zinc-950 rounded-lg px-4 py-3 border border-zinc-800">
+                                <span class="text-[13px] text-zinc-400 font-medium">Active now</span>
+                                <code id="currentUsbDeviceType" class="text-red-400 font-mono text-[13px] sm:text-sm font-semibold">Loading...</code>
+                            </div>
+                            <div class="flex items-center justify-between bg-zinc-950/50 rounded-lg px-4 py-3 border border-zinc-800/50">
+                                <span class="text-[13px] text-zinc-300 font-medium">Saved startup mode</span>
+                                <span class="text-[11px] text-amber-400 font-semibold shrink-0 ml-2 text-right">REBOOT REQUIRED</span>
+                            </div>
+                            <hr class="border-zinc-800">
+                            <form action="/set" method="post" id="usbDeviceTypeForm">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Startup value</label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="flex-1 relative">
+                                        <input class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-white placeholder-zinc-600 focus:border-red-500 outline-none font-mono" type="text" id="value" name="value" placeholder="0x0001" pattern="0x000[0-2]" title="Use 0x0000, 0x0001, or 0x0002" required="">
+                                        <input type="hidden" id="name" name="name" value="usbDeviceType">
+                                    </div>
+                                    <button type="submit" class="settings-action bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-5 rounded-lg transition-colors shrink-0 flex items-center justify-center">Save</button>
+                                </div>
+                                <p class="text-[11px] text-zinc-500 mt-1">0x0000 None, 0x0001 Serial, 0x0002 NCM.</p>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Wi-Fi and network configuration. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-wifi text-zinc-500 text-[11px] mt-[1.5px]"></i> Network Configuration
+                        </div>
+                        <form class="p-5 space-y-3" onsubmit="event.preventDefault(); window.saveNetworkConfig()">
+                            <div>
+                                <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Operating Mode</label>
+                                <div class="w-full relative">
+                                    <select id="wifiMode" class="cdrop-select settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 appearance-none">
+                                        <option value="ap">Access Point (AP Mode)</option>
+                                        <option value="client">Client (Station Mode)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Wi-Fi SSID</label>
+                                    <input id="wifiSsid" name="ssid" autocomplete="off" maxlength="32" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="text" placeholder="Network name">
+                                    <p class="text-[11px] text-zinc-500 mt-1">Used as LilyGO access point name or station network name.</p>
+                                </div>
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Password</label>
+                                    <div class="relative w-full">
+                                        <input id="wifiPass" autocomplete="new-password" maxlength="63" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 pr-10 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="password" placeholder="Leave blank to keep current">
+                                        <button type="button" onclick="const p=document.getElementById('wifiPass'); const i=this.querySelector('i'); if(p.type==='password'){p.type='text'; i.classList.remove('fa-eye'); i.classList.add('fa-eye-slash');}else{p.type='password'; i.classList.remove('fa-eye-slash'); i.classList.add('fa-eye');}" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center p-1">
+                                            <i class="fa-solid fa-eye text-[12px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:justify-end">
+                                <button type="button" onclick="window.saveNetworkConfig()" class="settings-action w-full sm:w-auto justify-center bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-4 rounded-lg transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Save &amp; Apply
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Evil Portal access point configuration. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-tower-broadcast text-zinc-500 text-[11px] mt-[1.5px]"></i> Evil Portal AP
+                        </div>
+                        <form class="p-5 space-y-3" onsubmit="event.preventDefault(); window.savePortalConfig()">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Portal SSID</label>
+                                    <input id="portalSsid" autocomplete="off" maxlength="29" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="text" placeholder="RedLilyGO-Portal">
+                                    <p class="text-[11px] text-zinc-500 mt-1">Portal AP name.</p>
+                                </div>
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Password</label>
+                                    <div class="relative w-full">
+                                        <input id="portalPass" autocomplete="new-password" maxlength="63" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 pr-10 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="password" placeholder="Leave blank to keep current">
+                                        <button type="button" onclick="const p=document.getElementById('portalPass'); const i=this.querySelector('i'); if(p.type==='password'){p.type='text'; i.classList.remove('fa-eye'); i.classList.add('fa-eye-slash');}else{p.type='password'; i.classList.remove('fa-eye-slash'); i.classList.add('fa-eye');}" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center p-1">
+                                            <i class="fa-solid fa-eye text-[12px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-t border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Open network</p>
+                                    <p class="text-[11px] text-zinc-500 mt-0.5">No password when the portal starts</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="portalOpen"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+                                <p class="text-[11px] text-zinc-500 sm:mr-auto">Applies on next portal start. DS <code class="text-zinc-400">-n</code>/<code class="text-zinc-400">-p</code> overrides.</p>
+                                <button type="button" onclick="window.savePortalConfig()" class="settings-action w-full sm:w-auto justify-center bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-4 rounded-lg transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i> Save portal AP
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Destructive actions that require explicit confirmation. -->
+                    <div class="bg-zinc-900 border border-red-900/40 rounded-xl overflow-hidden mt-2">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-red-500 flex items-center gap-2 bg-red-950/10">
+                            <i class="fa-solid fa-triangle-exclamation text-zinc-500 text-[11px] mt-[1.5px]"></i> Danger Zone
+                        </div>
+                        <div class="px-5">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-zinc-800 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Reboot System</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Gracefully restart the hardware</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Reboot System', 'Are you sure you want to reboot the hardware?', () => window.fireQuickAction('/system?cmd=reboot'))" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Reboot</button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-zinc-800 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Format RedLilyGO Storage</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Erase all saved scripts, logs, and captures</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Format RedLilyGO Storage', 'WARNING: This will delete all data on the RedLilyGO Storage. Proceed?', () => window.fireQuickAction('/system?cmd=format'))" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Format Data</button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Factory Reset</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Revert all configurations to default state</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Factory Reset', 'DANGER: This will reset RedLilyGO to factory defaults. Proceed?', () => window.fireQuickAction('/system?cmd=reset'))" class="settings-action bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-red-800/50 hover:border-red-500 shrink-0">Factory Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>

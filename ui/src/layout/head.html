@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedLilyGO</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='%23ef4444'/%3E%3C/svg%3E">
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('redlily_active_tab') || 'tab-1';
+        document.documentElement.setAttribute('data-active-tab', t);
+      } catch(e) {
+        document.documentElement.setAttribute('data-active-tab', 'tab-1');
+      }
+    })();
+    window.retryEmbeddedAsset = function(node) {
+      if (!node || node.dataset.retry === '1') return;
+      var source = node.getAttribute('src') || node.getAttribute('href');
+      if (!source) return;
+      node.dataset.retry = '1';
+      var separator = source.indexOf('?') >= 0 ? '&' : '?';
+      setTimeout(function() {
+        var retrySource = source + separator + '_retry=1';
+        if (node.tagName === 'SCRIPT') {
+          var retry = node.cloneNode(true);
+          retry.dataset.retry = '1';
+          retry.src = retrySource;
+          node.replaceWith(retry);
+        } else {
+          node.href = retrySource;
+        }
+      }, 150);
+    };
+    window.loadEmbeddedStyles = function(sources, index) {
+      index = index || 0;
+      if (index >= sources.length) return;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = sources[index];
+      link.onload = function() { window.loadEmbeddedStyles(sources, index + 1); };
+      link.onerror = function() {
+        if (!link.dataset.retry) {
+          link.dataset.retry = '1';
+          link.href = sources[index] + (sources[index].indexOf('?') >= 0 ? '&' : '?') + '_retry=1';
+        } else {
+          window.loadEmbeddedStyles(sources, index + 1);
+        }
+      };
+      document.head.appendChild(link);
+    };
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingerror', function() {
+        var fontCss = document.querySelector('link[href*="/fontawesome/css/all.min.css"]');
+        if (fontCss) window.retryEmbeddedAsset(fontCss);
+      });
+    }
+
+  </script>
+  <script>
+    window.loadEmbeddedStyles([
+      '/assets/css/tailwind.min.css',
+      '/assets/css/styles.min.css',
+      '/assets/vendor/fontawesome/css/all.min.css'
+    ]);
+  </script>
+  <script src="/assets/vendor/chartjs/chart.umd.min.js" onerror="window.retryEmbeddedAsset(this)"></script>
+  <style>
+    @keyframes mesh-move-1 {
+      0% { transform: translate(-8px, -2px) scale(1); }
+      50% { transform: translate(10px, 3px) scale(1.08); }
+      100% { transform: translate(-8px, -2px) scale(1); }
+    }
+    @keyframes mesh-move-2 {
+      0% { transform: translate(8px, 2px) scale(1); }
+      50% { transform: translate(-10px, -3px) scale(0.94); }
+      100% { transform: translate(8px, 2px) scale(1); }
+    }
+    .btn-gradient {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      height: 36px !important;
+      min-height: 36px !important;
+      border: none !important;
+      background: linear-gradient(100deg, #f59e0b 0%, #ec4899 26%, #8b5cf6 50%, #00d2ff 74%, #10b981 100%);
+      box-shadow: 0 4px 14px -2px rgba(168, 85, 247, 0.25), 0 2px 6px -1px rgba(0, 0, 0, 0.4) !important;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .btn-gradient > * {
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    }
+    .btn-gradient::before {
+      content: "";
+      position: absolute;
+      inset: -35%;
+      z-index: -2;
+      background:
+        radial-gradient(ellipse 40% 120% at 8% 70%, #fbbf24 0%, #f59e0b 45%, transparent 75%),
+        radial-gradient(ellipse 38% 120% at 50% 85%, #7c3aed 0%, #6d28d9 45%, transparent 75%),
+        radial-gradient(ellipse 38% 120% at 92% 70%, #10b981 0%, #059669 45%, transparent 75%);
+      animation: mesh-move-1 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .btn-gradient::after {
+      content: "";
+      position: absolute;
+      inset: -35%;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 40% 120% at 18% 25%, #ff2a6d 0%, #f43f5e 45%, transparent 75%),
+        radial-gradient(ellipse 40% 120% at 82% 25%, #00f0ff 0%, #0284c7 45%, transparent 75%);
+      animation: mesh-move-2 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .btn-gradient:hover,
+    .btn-gradient:focus,
+    .btn-gradient:focus-visible {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.38), 0 0 20px -4px rgba(0, 210, 255, 0.2) !important;
+      outline: none !important;
+    }
+    .btn-gradient:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+      box-shadow: 0 2px 8px -2px rgba(168, 85, 247, 0.2) !important;
+    }
+    .cdrop-btn {
+      border-color: transparent !important;
+      min-height: 40px !important;
+    }
+    #tab-2 .cdrop-btn,
+    #tab-2 input.settings-action,
+    #tab-2 select.settings-action,
+    #tab-3 .cdrop-btn,
+    #tab-3 input,
+    #tab-3 select {
+      height: 36px !important;
+      min-height: 36px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      font-size: 13px !important;
+      background: #09090b !important;
+      border: 1px solid #27272a !important;
+      border-radius: 8px !important;
+    }
+    #tab-2 .cdrop-btn,
+    #tab-3 .cdrop-btn {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+    .ide-dropdown .cdrop-btn {
+      padding: 0 10px !important;
+      min-height: 36px !important;
+      height: 36px !important;
+      font-size: 13px !important;
+      border-radius: 8px !important;
+    }
+    #tab-6 .cdrop-btn {
+      height: 32px !important;
+      min-height: 32px !important;
+      padding: 0 8px !important;
+      font-size: 11px !important;
+      font-family: inherit !important;
+      background: #18181b !important;
+      border: 1px solid #27272a !important;
+      border-radius: 8px !important;
+      color: #e4e4e7 !important;
+      max-width: 95px !important;
+    }
+    @media (min-width: 640px) {
+      #tab-6 .cdrop-btn {
+        padding: 0 12px !important;
+        font-size: 12px !important;
+        max-width: none !important;
+      }
+    }
+    #tab-6 .cdrop-btn:hover {
+      background: #27272a !important;
+      border-color: #3f3f46 !important;
+      color: #ffffff !important;
+    }
+    .cdrop-menu {
+      text-align: left !important;
+    }
+    .cdrop-item {
+      text-align: left !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    /* Keep placeholder text aligned across Settings and Marauder controls. */
+    #tab-2 input::placeholder,
+    #tab-2 select::placeholder,
+    #tab-3 input::placeholder,
+    #tab-3 select::placeholder,
+    #tab-3 .cdrop-btn,
+    #tab-2 .cdrop-btn {
+      font-size: 13px !important;
+    }
+    #tab-2 input::placeholder,
+    #tab-3 input::placeholder {
+      color: #9ca3af !important;
+      opacity: 1 !important;
+      font-size: 13px !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    /* Show the saved tab before the main dashboard script starts. */
+    html[data-active-tab] .tab-pane {
+      display: none !important;
+    }
+    html[data-active-tab="tab-1"] #tab-1,
+    html[data-active-tab="tab-2"] #tab-2,
+    html[data-active-tab="tab-3"] #tab-3,
+    html[data-active-tab="tab-4"] #tab-4,
+    html[data-active-tab="tab-6"] #tab-6,
+    html[data-active-tab="tab-7"] #tab-7,
+    html[data-active-tab="tab-8"] #tab-8 {
+      display: block !important;
+    }
+    html[data-active-tab]:not([data-active-tab="tab-1"]) #sidebar .nav-link[data-tab="tab-1"] {
+      background: transparent !important;
+      color: #a1a1aa !important;
+      box-shadow: none !important;
+    }
+    html[data-active-tab="tab-1"] #sidebar .nav-link[data-tab="tab-1"],
+    html[data-active-tab="tab-2"] #sidebar .nav-link[data-tab="tab-2"],
+    html[data-active-tab="tab-3"] #sidebar .nav-link[data-tab="tab-3"],
+    html[data-active-tab="tab-4"] #sidebar .nav-link[data-tab="tab-4"],
+    html[data-active-tab="tab-6"] #sidebar .nav-link[data-tab="tab-6"],
+    html[data-active-tab="tab-7"] #sidebar .nav-link[data-tab="tab-7"],
+    html[data-active-tab="tab-8"] #sidebar .nav-link[data-tab="tab-8"] {
+      background: rgba(220,38,38,.08) !important;
+      color: #fca5a5 !important;
+      box-shadow: inset 3px 0 0 #dc2626 !important;
+    }
+  </style>
+</head>
+<body class="app-shell bg-zinc-950 text-zinc-300 flex overflow-hidden">
+  <div id="setupGate" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950 p-4" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <form id="setupForm" class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl" autocomplete="off">
+      <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-400"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 id="setupTitle" class="text-xl font-bold text-white">Secure RedLilyGO</h1>
+      <p class="mt-2 text-sm text-zinc-400">Create local administrator credentials before device controls become available.</p>
+      <label class="mt-5 block text-xs font-semibold text-zinc-300" for="setupUsername">Username</label>
+      <input id="setupUsername" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_-]+" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <label class="mt-4 block text-xs font-semibold text-zinc-300" for="setupPassword">Password</label>
+      <input id="setupPassword" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="64" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <label class="mt-4 block text-xs font-semibold text-zinc-300" for="setupConfirmation">Confirm password</label>
+      <input id="setupConfirmation" name="confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="64" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <p id="setupMessage" class="mt-4 min-h-5 text-xs text-zinc-400" role="status">Checking device setup...</p>
+      <button id="setupSubmit" type="submit" class="mt-2 w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50" disabled>Secure device</button>
+    </form>
+  </div>
+
+
+  <!-- Backdrop closes the sidebar on narrow screens. -->
+  <div id="overlay" data-action="close-sidebar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden cursor-pointer"></div>
+
+  <!-- Main navigation sidebar. -->

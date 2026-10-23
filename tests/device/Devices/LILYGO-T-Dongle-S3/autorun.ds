@@ -1,0 +1,50 @@
+REM RedLilyGO - Hardware smoke test (LILYGO T-Dongle S3). Needs the Windows Agent, /testcard.png and /disk.img on the SD. Authorized testing only.
+WHILE (AGENT_CONNECTED() == FALSE)
+  DELAY 2000
+END_WHILE
+TFT_OFF
+DELAY 2000
+TFT_ON
+DISPLAY_CLEAR
+DISPLAY_TEXT 0 0 Agent connected
+DELAY 3000
+DISPLAY_PNG /testcard.png
+DELAY 10000
+DISPLAY_CLEAR
+DISPLAY_TEXT 0 0 Agent connected
+DISPLAY_TEXT 0 10 Test card
+AGENT_RUN dir
+WAIT_FOR_AGENT_RUN_RESULT
+DISPLAY_TEXT 0 20 Agent run command
+GUI
+DELAY 1000
+STRING https://github.com/zis3c/RedLilyGO/blob/main/docs/images/interface-status.png
+ENTER
+DISPLAY_TEXT 0 30 Turning services off
+LED_OFF
+DISPLAY_CLEAR
+DISPLAY_TEXT 0 0 Do WiFI check
+DISPLAY_TEXT 0 10 Then press button
+WAIT_FOR_BUTTON_PRESS
+DISPLAY_CLEAR
+DISPLAY_TEXT 0 0 Agent connected
+DISPLAY_TEXT 0 10 Test card
+DISPLAY_TEXT 0 20 Agent run command
+DISPLAY_TEXT 0 30 Turning services off
+DISPLAY_TEXT 0 40 Mounting USB disk
+USB_MOUNT_DISK_READ_ONLY /disk.img
+WAIT_FOR_BUTTON_PRESS
+LED_R
+WAIT_FOR_BUTTON_PRESS
+LED_G
+WAIT_FOR_BUTTON_PRESS
+LED_B
+WAIT_FOR_BUTTON_PRESS
+DISPLAY_TEXT 0 50 LEDs and buttons
+WIFI_OFF
+ESP32M attack -t rickroll
+DISPLAY_TEXT 0 60 ESP32 Maurader
+WAIT_FOR_BUTTON_PRESS
+DISPLAY_TEXT 0 70 Reset in 5s
+DELAY 5000
+RESET

@@ -1,0 +1,21 @@
+# CodeQL configuration for RedLilyGO.
+#
+# Excludes third-party, generated and vendored code so findings reflect the
+# maintained project only. Used by tools/codeql.ps1 and the CodeQL GitHub Action.
+
+name: "RedLilyGO CodeQL config"
+
+paths-ignore:
+  # Third-party noVNC client bundled under ui/vnc (MPL 2.0).
+  - ui/vnc
+  # Third-party fonts/icons and generated bundles.
+  - ui/content
+  - src/html
+  - ui/node_modules
+  # Firmware dependencies and build output.
+  - lib
+  - .pio
+  - dist
+  # Vendored web assets.
+  - ui/content/assets/vendor
+  - "**/*.min.js"

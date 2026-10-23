@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>RedLilyGO Captive Portal Demo</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card: #18181b;
+      --line: #3f3f46;
+      --ink: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #dc2626;
+      --accent-hover: #ef4444;
+      --ok: #86efac;
+      --warn: #fbbf24;
+      color-scheme: dark;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: radial-gradient(1200px 600px at 50% -10%, #1f1f27 0%, var(--bg) 60%);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      width: min(94vw, 440px);
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .45);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+
+    .brand .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    .brand h1 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+
+    .brand .tag {
+      margin-left: auto;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .14em;
+    }
+
+    .hint { margin: 0 0 4px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    code { padding: 1px 5px; border-radius: 5px; background: #27272a; font-size: .92em; }
+
+    label { display: block; margin: 16px 0 6px; color: #d4d4d8; font-size: 13px; font-weight: 500; }
+
+    input {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid #52525b;
+      border-radius: 10px;
+      background: #0b0b0e;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    input[readonly] { border-style: dashed; color: var(--muted); cursor: default; }
+
+    input:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, .28);
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s ease, opacity .15s ease;
+    }
+
+    button:hover { background: var(--accent-hover); }
+    button:focus-visible { outline: 3px solid rgba(220, 38, 38, .45); outline-offset: 2px; }
+    button[disabled] { opacity: .6; cursor: progress; }
+
+    #result { min-height: 20px; margin: 14px 2px 0; font-size: 13px; color: var(--ok); }
+    #result[data-tone="pending"] { color: var(--muted); }
+    #result[data-tone="error"] { color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      <h1>RedLilyGO Captive Portal</h1>
+      <span class="tag" title="Demo template">DEMO</span>
+    </div>
+
+    <p class="hint">This local page tests the captive portal display and the <code>/get</code> submit flow.</p>
+
+    <form id="demoForm" action="/get" method="get">
+      <label for="demoUser">Fixed demo username</label>
+      <input id="demoUser" name="email" value="demo@example.test" readonly>
+      <label for="demoPass">Fixed demo password</label>
+      <input id="demoPass" name="password" value="DEMO_ONLY" readonly>
+      <button type="submit">Send test data</button>
+    </form>
+
+    <p id="result" aria-live="polite"></p>
+  </main>
+  <script>
+    var form = document.getElementById('demoForm');
+    var result = document.getElementById('result');
+    var button = form.querySelector('button');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      result.dataset.tone = 'pending';
+      result.textContent = 'Sending fixed demo data...';
+      button.disabled = true;
+      fetch('/get?email=' + encodeURIComponent('demo@example.test') + '&password=' + encodeURIComponent('DEMO_ONLY'))
+        .then(function (response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          result.dataset.tone = 'success';
+          result.textContent = 'Demo complete. Fixed dummy data was sent to /get.';
+        })
+        .catch(function (error) {
+          result.dataset.tone = 'error';
+          result.textContent = 'Demo failed: ' + error.message;
+        })
+        .then(function () { button.disabled = false; });
+    });
+  </script>
+</body>
+</html>

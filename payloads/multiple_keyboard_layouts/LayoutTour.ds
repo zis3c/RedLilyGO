@@ -1,0 +1,4 @@
+REM RedLilyGO - Keyboard Layout Tour. Only win_en-GB is compiled here; add LOCALE_* flags in platformio.ini for more. Authorized testing only.
+STRING American keyboard layout
+KEYBOARD_LAYOUT win_en-GB
+STRING British keyboard layout

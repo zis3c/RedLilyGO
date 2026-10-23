@@ -1,0 +1,93 @@
+/* Sidebar layout and navigation states. */
+.nav-link {
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+    box-shadow: inset 3px 0 0 transparent;
+}
+.nav-link:hover { background: rgba(255,255,255,.04); }
+.nav-link .nav-text { flex: 1; text-align: left; }
+.nav-link.active {
+    background: rgba(220,38,38,.08);
+    color: #fca5a5 !important;
+    box-shadow: inset 3px 0 0 #dc2626;
+}
+.nav-link.capability-unavailable {
+    color: rgba(161, 161, 170, .42);
+    background: rgba(24, 24, 27, .45);
+    border: 1px solid rgba(63, 63, 70, .35);
+}
+.nav-link.capability-unavailable:hover {
+    color: rgba(212, 212, 216, .72);
+    background: rgba(39, 39, 42, .62);
+}
+.nav-link.capability-unavailable i { color: rgba(113, 113, 122, .58); }
+
+
+@media (min-width: 768px) {
+    #sidebar { transition: width 0.3s ease; }
+    body.sidebar-collapsed #sidebar { width: 4.5rem; }
+    
+    body.sidebar-collapsed #sidebar .nav-text,
+    body.sidebar-collapsed #sidebar .sidebar-logo-text {
+        display: none;
+    }
+    
+    body.sidebar-collapsed #sidebar {
+        overflow-x: hidden !important;
+    }
+    body.sidebar-collapsed #sidebar nav {
+        overflow-x: hidden !important;
+    }
+    body.sidebar-collapsed #sidebar .sidebar-category {
+        display: none;
+    }
+    body.sidebar-collapsed #sidebar .nav-link {
+        gap: 0;
+    }
+    
+    /* Keep the collapse control centered in the narrow sidebar. */
+    body.sidebar-collapsed #sidebar .h-14 {
+        padding: 0;
+        justify-content: center;
+    }
+    body.sidebar-collapsed #sidebar .h-14 .desktop-toggle-btn {
+        margin: 0;
+    }
+    
+    /* Rotate and fade the icon to show the current sidebar state. */
+    #sidebarDotIcon {
+        opacity: 0;
+        transform: scale(0.5);
+        transition: opacity 0.2s, transform 0.2s;
+        position: absolute;
+    }
+    body.sidebar-collapsed #sidebarDotIcon {
+        opacity: 1;
+        transform: scale(1);
+    }
+    body.sidebar-collapsed #sidebarToggleIcon {
+        opacity: 0;
+        transform: rotate(180deg) scale(0.5);
+    }
+    body.sidebar-collapsed .desktop-toggle-btn:hover #sidebarDotIcon {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    body.sidebar-collapsed .desktop-toggle-btn:hover #sidebarToggleIcon {
+        opacity: 1;
+        transform: rotate(180deg) scale(1);
+    }
+    #sidebarToggleIcon { transition: transform 0.3s, opacity 0.2s; }
+    
+    /* Keep navigation targets the same height when labels are hidden. */
+    body.sidebar-collapsed #sidebar .nav-link {
+        padding-left: 0;
+        padding-right: 0;
+        justify-content: center;
+        height: 40px; /* Keep the click target stable when labels are hidden. */
+    }
+    
+    #sidebar .nav-link {
+        height: 40px; /* Match the collapsed navigation row height. */
+    }
+}
+

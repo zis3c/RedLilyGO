@@ -1,0 +1,518 @@
+openapi: 3.1.0
+info:
+  title: RedLilyGO Local HTTP API
+  version: 0.1.0
+  description: >-
+    Describes the HTTP routes exposed by the firmware in this checkout. The
+    default device server uses plain HTTP at http://4.3.2.1 and does not provide
+    TLS. Basic Auth is disabled by default and can be enabled by first-run
+    setup. The optional security declaration describes the default deployment;
+    when web-auth is enabled, protected routes require Basic Auth. Every
+    state-changing route requires an HTTP POST that carries the per-boot
+    X-CSRF-Token header, which is read once from GET /csrf-token. Cross-site
+    requests are also rejected when they include cross-site Origin or Fetch
+    Metadata headers. The token blocks browser cross-site requests and cached
+    Basic-auth GET prefetch, but it is not encryption and not a general
+    authorization boundary. Do not cache, prefetch, or automatically retry a
+    state-changing operation. Availability and response fields depend on the
+    selected build and current device state. The server also answers
+    captive-portal probe paths (for example /generate_204,
+    /hotspot-detect.html, /connecttest.txt, /ncsi.txt) with a redirect to the
+    device root, serves the embedded UI under /assets/ and /remote, treats
+    /wpad.dat as 404 and /favicon.ico as 204, and redirects legacy
+    /assets/css/redlilygo.css to the bundle. Those utility routes are not
+    modeled as API operations here.
+servers:
+  - url: http://4.3.2.1
+    description: Default device access point in AP mode; plain HTTP.
+security:
+  - {}
+  - basicAuth: []
+paths:
+  /csrf-token:
+    get:
+      security: []
+      summary: Read the per-boot CSRF token
+      description: >-
+        Returns the token required in the X-CSRF-Token header of every
+        state-changing request. The token rotates on each boot. Cross-site
+        scripts cannot read this response because of the same-origin policy.
+      responses:
+        '200':
+          description: CSRF token JSON.
+  /setup/status:
+    get:
+      security: []
+      summary: Read first-run setup state
+      description: Before setup, the response includes the current nonce used by POST /setup.
+      responses:
+        '200':
+          description: Setup state and optional nonce.
+  /setup:
+    post:
+      security: []
+      summary: Complete first-run setup
+      description: Requires a same-origin Origin header and the current nonce. The handler returns 409 while web-auth is enabled. If an owner later disables Basic Auth, this setup route becomes available again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetupRequest'
+      responses:
+        '200': { description: Credentials saved and Basic Auth enabled }
+        '400': { description: Credentials are invalid or do not meet the minimum length }
+        '403': { description: Origin or nonce is invalid }
+        '409': { description: Basic Auth is already enabled }
+        '429': { description: Too many setup attempts from this client }
+        '500': { description: Credentials could not be saved }
+  /health:
+    get:
+      summary: Read firmware health summary
+      description: >-
+        Reports firmware-defined Wi-Fi, storage, heap, USB, Agent, reset, and
+        safe-mode fields. A healthy result does not validate every peripheral
+        or exercise every feature.
+      responses:
+        '200': { description: The firmware returned its current health summary }
+  /data.json:
+    get:
+      summary: Read dashboard snapshot
+      description: Includes telemetry, runtime state, settings metadata, file details, and in-memory logs. The SD-backed file listing may be truncated.
+      responses:
+        '200': { description: Dashboard JSON snapshot }
+  /telemetry:
+    get:
+      summary: Read frequently refreshed telemetry
+      description: Smaller response than /data.json; storage usage may come from a cache.
+      responses:
+        '200': { description: Current telemetry JSON }
+  /runtime-logs:
+    get:
+      summary: Read bounded in-memory runtime logs
+      responses:
+        '200': { description: Runtime log JSON }
+  /systemlog:
+    get:
+      summary: Read the persistent log tail
+      parameters:
+        - name: tail
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 2000, default: 200 }
+          description: Number of trailing lines to return.
+      responses:
+        '200': { description: Text log tail }
+        '400': { description: tail is outside the supported range or is not an integer }
+        '503': { description: Storage is unavailable }
+  /clearlogs:
+    post:
+      summary: Clear the in-memory log buffer
+      description: Does not delete the persistent log file.
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: In-memory logs cleared }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+  /files:
+    get:
+      summary: Read storage file listing
+      description: >-
+        Without a directory query, returns a bounded recursive snapshot. With
+        directory, returns only that folder's immediate children so the Files
+        page can load a large SD card incrementally.
+      parameters:
+        - name: directory
+          in: query
+          required: false
+          description: Safe absolute storage path to list. Use / for the SD root.
+          schema:
+            type: string
+            maxLength: 128
+            pattern: '^/'
+      responses:
+        '200': { description: Bounded file and directory listing JSON }
+        '400': { description: Invalid directory path }
+        '404': { description: Directory does not exist }
+        '503': { description: Storage is unavailable or response could not be allocated }
+  /download:
+    get:
+      summary: Download a storage file
+      parameters:
+        - $ref: '#/components/parameters/Filename'
+      responses:
+        '200': { description: File bytes }
+        '400': { description: Invalid filename }
+        '404': { description: Requested file does not exist }
+        '503': { description: Storage is unavailable }
+  /uploadFile:
+    post:
+      summary: Upload a file to storage
+      description: >-
+        Accepts one multipart file. The destination can be selected from the
+        standard folders or inferred from the extension. Replacement requires
+        replace=1; the optional path is for replacing an existing file with a
+        matching basename. Upload stages data before committing the destination.
+      parameters:
+        - name: directory
+          in: query
+          schema: { type: string, default: Auto }
+          description: Standard destination folder or Auto for extension-based placement.
+        - name: replace
+          in: query
+          schema: { type: string, enum: ['0', '1'], default: '0' }
+        - name: path
+          in: query
+          schema: { type: string, maxLength: 128 }
+          description: Existing absolute path to replace when replace=1. The basename must match the uploaded filename.
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: Upload completed }
+        '400': { description: Invalid filename, path, or upload data }
+        '401': { description: Basic Auth is enabled and credentials are missing or invalid }
+        '403': { description: Cross-site upload or missing/invalid CSRF token }
+        '404': { description: Replacement path does not exist }
+        '409': { description: Destination exists and replacement was not requested }
+        '413': { description: Request exceeds the configured upload limit }
+        '500': { description: Storage write or commit failed }
+        '503': { description: Storage is unavailable }
+  /delete:
+    post:
+      summary: Delete a storage file
+      parameters:
+        - $ref: '#/components/parameters/Filename'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '302': { description: Browser redirected after the file was deleted }
+        '400': { description: Invalid filename }
+        '403': { description: Missing or invalid CSRF token }
+        '404': { description: File does not exist }
+        '405': { description: Route requires POST }
+        '503': { description: Storage is unavailable }
+  /moveFile:
+    post:
+      summary: Move a storage file
+      description: Both paths must be valid and the destination basename must match the source basename.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: File moved }
+        '400': { description: Paths are invalid or missing }
+        '403': { description: Missing or invalid CSRF token }
+        '409': { description: Move failed or destination already exists }
+        '503': { description: Storage is unavailable }
+  /runfile:
+    post:
+      summary: Queue a DuckyScript file
+      description: Accepts an existing .ds file. A successful response means queued, not completed.
+      parameters:
+        - $ref: '#/components/parameters/Filename'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Payload queued }
+        '400': { description: Invalid payload path }
+        '403': { description: Missing or invalid CSRF token }
+        '404': { description: Payload does not exist }
+        '405': { description: Route requires POST }
+        '503': { description: Storage is unavailable }
+  /rawinput:
+    post:
+      summary: Queue a DuckyScript or Marauder command
+      description: Recognized Marauder commands are routed to Marauder; other accepted commands go to the Ducky interpreter. A successful response confirms queueing only.
+      parameters:
+        - $ref: '#/components/parameters/RawCommand'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Command queued }
+        '400': { description: Command is invalid or missing }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Required Wi-Fi or Marauder service is unavailable }
+  /runagentcmd:
+    post:
+      summary: Queue a command through the Windows Agent
+      description: Requires a connected and protocol-compatible Agent. A successful response confirms queueing only.
+      parameters:
+        - $ref: '#/components/parameters/RawCommand'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Agent command queued }
+        '400': { description: Command is invalid or missing }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Agent is unavailable or protocol-incompatible }
+  /showimage:
+    post:
+      summary: Display a PNG from storage
+      parameters:
+        - $ref: '#/components/parameters/Filename'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '302': { description: Firmware redirected to the dashboard after displaying the image }
+        '400': { description: Invalid image path }
+        '403': { description: Missing or invalid CSRF token }
+        '404': { description: Image does not exist }
+        '405': { description: Route requires POST }
+        '503': { description: Display or storage is unavailable }
+  /marauder:
+    post:
+      summary: Queue a Marauder command
+      description: Requires Wi-Fi and a ready Marauder service. The accepted command grammar depends on the bundled Marauder revision.
+      parameters:
+        - name: marauderCmd
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Command queued }
+        '302': { description: Browser navigation redirected to the dashboard after queueing }
+        '400': { description: Command is invalid or missing }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Wi-Fi or Marauder is unavailable }
+  /capture:
+    post:
+      summary: Start or stop a supported capture workflow
+      description: Capture availability depends on the build, USB mode, storage, and current Marauder state. Captures can contain private traffic.
+      parameters:
+        - name: source
+          in: query
+          required: true
+          schema: { type: string, enum: [wifi, usb] }
+        - name: action
+          in: query
+          required: true
+          schema: { type: string, enum: [start, stop] }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Capture operation accepted }
+        '400': { description: Missing or invalid source/action }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '409': { description: Marauder is already active for a Wi-Fi capture request }
+        '503': { description: Requested capture service, USB mode, or storage is unavailable }
+  /mic:
+    post:
+      summary: Start or stop microphone capture
+      description: Only available on a build with microphone support and a configured microphone.
+      parameters:
+        - name: enabled
+          in: query
+          required: true
+          schema: { type: boolean }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Capture state request accepted }
+        '400': { description: enabled is missing or invalid }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Microphone support is unavailable }
+  /system:
+    post:
+      summary: Reset, reboot, or format the device
+      description: Destructive route. format erases storage; reset clears settings; reboot restarts the device.
+      parameters:
+        - name: cmd
+          in: query
+          required: true
+          schema: { type: string, enum: [reset, reboot, format] }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Operation accepted; the connection may close during restart }
+        '400': { description: Missing or unknown command }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Storage is unavailable for format }
+  /settings:
+    post:
+      summary: Update dashboard or Wi-Fi settings
+      description: >-
+        Parameters are currently sent in the query string. Supported fields are
+        stealth, autorun, powersave, screensaver, or network with apmode and
+        optional ssid/pass values. Wi-Fi changes restart the device. GET is
+        rejected for this route.
+      parameters:
+        - name: stealth
+          in: query
+          schema: { type: boolean }
+        - name: autorun
+          in: query
+          schema: { type: boolean }
+        - name: powersave
+          in: query
+          schema: { type: boolean }
+        - name: screensaver
+          in: query
+          schema: { type: boolean }
+        - name: network
+          in: query
+          schema: { type: boolean }
+          description: Include this field to select the Wi-Fi network configuration operation.
+        - name: apmode
+          in: query
+          schema: { type: boolean }
+        - name: ssid
+          in: query
+          schema: { type: string, maxLength: 32 }
+        - name: pass
+          in: query
+          schema: { type: string, maxLength: 63, format: password }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Setting saved; network changes restart the device }
+        '400': { description: Invalid setting or network configuration }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: GET is not accepted for this route }
+        '500': { description: Setting could not be saved }
+  /set:
+    post:
+      summary: Set or remove a registered setting
+      description: Omit value to remove a stored key where removal is allowed. Some settings have additional validation.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema: { type: string }
+        - name: value
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '302': { description: Browser redirected after the setting was saved or removed }
+        '400': { description: Setting value is invalid }
+        '403': { description: Missing or invalid CSRF token }
+        '404': { description: Setting key does not exist when removing it }
+        '405': { description: Route requires POST }
+        '500': { description: Stored setting could not be removed }
+        '503': { description: Settings are unavailable }
+  /wifi/scan:
+    get:
+      summary: Read the current Marauder access-point list
+      responses:
+        '200': { description: Access-point JSON array }
+        '503': { description: Wi-Fi or Marauder is unavailable }
+  /evilportal/files:
+    get:
+      summary: List portal templates
+      description: Requires storage and Marauder support.
+      responses:
+        '200': { description: Template listing JSON }
+        '503': { description: Storage or Marauder is unavailable }
+  /evilportal:
+    get:
+      summary: Read Evil Portal state
+      description: Returns the current portal state without changing it.
+      responses:
+        '200': { description: Portal state JSON }
+        '503': { description: Wi-Fi or Marauder is unavailable }
+    post:
+      summary: Control Evil Portal state
+      description: >-
+        Use action=start with file and optional ssid, action=stop to stop the
+        portal, or action=clear to clear saved history. Use only synthetic test
+        values in an isolated lab.
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema: { type: string, enum: [start, stop, clear] }
+        - name: file
+          in: query
+          schema: { type: string }
+          description: Portal template path required for action=start.
+        - name: ssid
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Requested action accepted }
+        '400': { description: Required template is missing or invalid }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Wi-Fi, storage, or Marauder is unavailable }
+  /deauth:
+    get:
+      summary: Read defensive deauthentication event counters
+      description: Counts parsed events while the bundled defensive sniffdeauth workflow is active.
+      responses:
+        '200': { description: Event counter and bounded event list }
+        '503': { description: Wi-Fi or Marauder is unavailable }
+  /channelhop:
+    post:
+      summary: Set the Marauder channel-hop delay
+      parameters:
+        - name: delay
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 60 }
+          description: Delay in seconds.
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200': { description: Delay saved }
+        '400': { description: Delay is missing or outside the supported range }
+        '403': { description: Missing or invalid CSRF token }
+        '405': { description: Route requires POST }
+        '503': { description: Wi-Fi or Marauder is unavailable }
+  /remote:
+    get:
+      summary: Serve the remote desktop page
+      responses:
+        '200': { description: Embedded HTML page }
+  /remote/input:
+    get:
+      summary: Serve the remote HID control page
+      responses:
+        '200': { description: Embedded HTML page }
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  parameters:
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: Per-boot token from GET /csrf-token.
+      schema: { type: string }
+    Filename:
+      name: filename
+      in: query
+      required: true
+      schema: { type: string }
+    RawCommand:
+      name: rawCommand
+      in: query
+      required: true
+      schema: { type: string }
+  schemas:
+    SetupRequest:
+      type: object
+      required: [nonce, username, password, confirmation]
+      properties:
+        nonce: { type: string }
+        username:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9_-]+$'
+        password: { type: string, minLength: 12, maxLength: 64, format: password }
+        confirmation: { type: string, format: password }

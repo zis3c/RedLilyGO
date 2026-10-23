@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedLilyGO</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='%23ef4444'/%3E%3C/svg%3E">
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('redlily_active_tab') || 'tab-1';
+        document.documentElement.setAttribute('data-active-tab', t);
+      } catch(e) {
+        document.documentElement.setAttribute('data-active-tab', 'tab-1');
+      }
+    })();
+    window.retryEmbeddedAsset = function(node) {
+      if (!node || node.dataset.retry === '1') return;
+      var source = node.getAttribute('src') || node.getAttribute('href');
+      if (!source) return;
+      node.dataset.retry = '1';
+      var separator = source.indexOf('?') >= 0 ? '&' : '?';
+      setTimeout(function() {
+        var retrySource = source + separator + '_retry=1';
+        if (node.tagName === 'SCRIPT') {
+          var retry = node.cloneNode(true);
+          retry.dataset.retry = '1';
+          retry.src = retrySource;
+          node.replaceWith(retry);
+        } else {
+          node.href = retrySource;
+        }
+      }, 150);
+    };
+    window.loadEmbeddedStyles = function(sources, index) {
+      index = index || 0;
+      if (index >= sources.length) return;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = sources[index];
+      link.onload = function() { window.loadEmbeddedStyles(sources, index + 1); };
+      link.onerror = function() {
+        if (!link.dataset.retry) {
+          link.dataset.retry = '1';
+          link.href = sources[index] + (sources[index].indexOf('?') >= 0 ? '&' : '?') + '_retry=1';
+        } else {
+          window.loadEmbeddedStyles(sources, index + 1);
+        }
+      };
+      document.head.appendChild(link);
+    };
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingerror', function() {
+        var fontCss = document.querySelector('link[href*="/fontawesome/css/all.min.css"]');
+        if (fontCss) window.retryEmbeddedAsset(fontCss);
+      });
+    }
+
+  </script>
+  <script>
+    window.loadEmbeddedStyles([
+      '/assets/css/tailwind.min.css',
+      '/assets/css/styles.min.css',
+      '/assets/vendor/fontawesome/css/all.min.css'
+    ]);
+  </script>
+  <script src="/assets/vendor/chartjs/chart.umd.min.js" onerror="window.retryEmbeddedAsset(this)"></script>
+  <style>
+    @keyframes mesh-move-1 {
+      0% { transform: translate(-8px, -2px) scale(1); }
+      50% { transform: translate(10px, 3px) scale(1.08); }
+      100% { transform: translate(-8px, -2px) scale(1); }
+    }
+    @keyframes mesh-move-2 {
+      0% { transform: translate(8px, 2px) scale(1); }
+      50% { transform: translate(-10px, -3px) scale(0.94); }
+      100% { transform: translate(8px, 2px) scale(1); }
+    }
+    .btn-gradient {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      height: 36px !important;
+      min-height: 36px !important;
+      border: none !important;
+      background: linear-gradient(100deg, #f59e0b 0%, #ec4899 26%, #8b5cf6 50%, #00d2ff 74%, #10b981 100%);
+      box-shadow: 0 4px 14px -2px rgba(168, 85, 247, 0.25), 0 2px 6px -1px rgba(0, 0, 0, 0.4) !important;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .btn-gradient > * {
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    }
+    .btn-gradient::before {
+      content: "";
+      position: absolute;
+      inset: -35%;
+      z-index: -2;
+      background:
+        radial-gradient(ellipse 40% 120% at 8% 70%, #fbbf24 0%, #f59e0b 45%, transparent 75%),
+        radial-gradient(ellipse 38% 120% at 50% 85%, #7c3aed 0%, #6d28d9 45%, transparent 75%),
+        radial-gradient(ellipse 38% 120% at 92% 70%, #10b981 0%, #059669 45%, transparent 75%);
+      animation: mesh-move-1 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .btn-gradient::after {
+      content: "";
+      position: absolute;
+      inset: -35%;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 40% 120% at 18% 25%, #ff2a6d 0%, #f43f5e 45%, transparent 75%),
+        radial-gradient(ellipse 40% 120% at 82% 25%, #00f0ff 0%, #0284c7 45%, transparent 75%);
+      animation: mesh-move-2 7s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .btn-gradient:hover,
+    .btn-gradient:focus,
+    .btn-gradient:focus-visible {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+      box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.38), 0 0 20px -4px rgba(0, 210, 255, 0.2) !important;
+      outline: none !important;
+    }
+    .btn-gradient:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+      box-shadow: 0 2px 8px -2px rgba(168, 85, 247, 0.2) !important;
+    }
+    .cdrop-btn {
+      border-color: transparent !important;
+      min-height: 40px !important;
+    }
+    #tab-2 .cdrop-btn,
+    #tab-2 input.settings-action,
+    #tab-2 select.settings-action,
+    #tab-3 .cdrop-btn,
+    #tab-3 input,
+    #tab-3 select {
+      height: 36px !important;
+      min-height: 36px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      font-size: 13px !important;
+      background: #09090b !important;
+      border: 1px solid #27272a !important;
+      border-radius: 8px !important;
+    }
+    #tab-2 .cdrop-btn,
+    #tab-3 .cdrop-btn {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+    .ide-dropdown .cdrop-btn {
+      padding: 0 10px !important;
+      min-height: 36px !important;
+      height: 36px !important;
+      font-size: 13px !important;
+      border-radius: 8px !important;
+    }
+    #tab-6 .cdrop-btn {
+      height: 32px !important;
+      min-height: 32px !important;
+      padding: 0 8px !important;
+      font-size: 11px !important;
+      font-family: inherit !important;
+      background: #18181b !important;
+      border: 1px solid #27272a !important;
+      border-radius: 8px !important;
+      color: #e4e4e7 !important;
+      max-width: 95px !important;
+    }
+    @media (min-width: 640px) {
+      #tab-6 .cdrop-btn {
+        padding: 0 12px !important;
+        font-size: 12px !important;
+        max-width: none !important;
+      }
+    }
+    #tab-6 .cdrop-btn:hover {
+      background: #27272a !important;
+      border-color: #3f3f46 !important;
+      color: #ffffff !important;
+    }
+    .cdrop-menu {
+      text-align: left !important;
+    }
+    .cdrop-item {
+      text-align: left !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    /* Keep placeholder text aligned across Settings and Marauder controls. */
+    #tab-2 input::placeholder,
+    #tab-2 select::placeholder,
+    #tab-3 input::placeholder,
+    #tab-3 select::placeholder,
+    #tab-3 .cdrop-btn,
+    #tab-2 .cdrop-btn {
+      font-size: 13px !important;
+    }
+    #tab-2 input::placeholder,
+    #tab-3 input::placeholder {
+      color: #9ca3af !important;
+      opacity: 1 !important;
+      font-size: 13px !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    /* Show the saved tab before the main dashboard script starts. */
+    html[data-active-tab] .tab-pane {
+      display: none !important;
+    }
+    html[data-active-tab="tab-1"] #tab-1,
+    html[data-active-tab="tab-2"] #tab-2,
+    html[data-active-tab="tab-3"] #tab-3,
+    html[data-active-tab="tab-4"] #tab-4,
+    html[data-active-tab="tab-6"] #tab-6,
+    html[data-active-tab="tab-7"] #tab-7,
+    html[data-active-tab="tab-8"] #tab-8 {
+      display: block !important;
+    }
+    html[data-active-tab]:not([data-active-tab="tab-1"]) #sidebar .nav-link[data-tab="tab-1"] {
+      background: transparent !important;
+      color: #a1a1aa !important;
+      box-shadow: none !important;
+    }
+    html[data-active-tab="tab-1"] #sidebar .nav-link[data-tab="tab-1"],
+    html[data-active-tab="tab-2"] #sidebar .nav-link[data-tab="tab-2"],
+    html[data-active-tab="tab-3"] #sidebar .nav-link[data-tab="tab-3"],
+    html[data-active-tab="tab-4"] #sidebar .nav-link[data-tab="tab-4"],
+    html[data-active-tab="tab-6"] #sidebar .nav-link[data-tab="tab-6"],
+    html[data-active-tab="tab-7"] #sidebar .nav-link[data-tab="tab-7"],
+    html[data-active-tab="tab-8"] #sidebar .nav-link[data-tab="tab-8"] {
+      background: rgba(220,38,38,.08) !important;
+      color: #fca5a5 !important;
+      box-shadow: inset 3px 0 0 #dc2626 !important;
+    }
+  </style>
+</head>
+<body class="app-shell bg-zinc-950 text-zinc-300 flex overflow-hidden">
+  <div id="setupGate" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950 p-4" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <form id="setupForm" class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl" autocomplete="off">
+      <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-400"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 id="setupTitle" class="text-xl font-bold text-white">Secure RedLilyGO</h1>
+      <p class="mt-2 text-sm text-zinc-400">Create local administrator credentials before device controls become available.</p>
+      <label class="mt-5 block text-xs font-semibold text-zinc-300" for="setupUsername">Username</label>
+      <input id="setupUsername" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_-]+" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <label class="mt-4 block text-xs font-semibold text-zinc-300" for="setupPassword">Password</label>
+      <input id="setupPassword" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="64" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <label class="mt-4 block text-xs font-semibold text-zinc-300" for="setupConfirmation">Confirm password</label>
+      <input id="setupConfirmation" name="confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="64" required class="mt-2 w-full rounded-lg border border-transparent bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-red-500">
+      <p id="setupMessage" class="mt-4 min-h-5 text-xs text-zinc-400" role="status">Checking device setup...</p>
+      <button id="setupSubmit" type="submit" class="mt-2 w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50" disabled>Secure device</button>
+    </form>
+  </div>
+
+
+  <!-- Backdrop closes the sidebar on narrow screens. -->
+  <div id="overlay" data-action="close-sidebar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden cursor-pointer"></div>
+
+  <!-- Main navigation sidebar. -->
+
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-60 bg-zinc-900 border-r border-zinc-800 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-200 overflow-x-hidden">
+    <div class="h-14 flex items-center px-5 border-b border-zinc-800 shrink-0">
+      <span class="text-white font-bold text-[16px] tracking-tight flex items-center sidebar-logo-text">
+        LilyG<span class="sidebar-logo-dot" aria-hidden="true"></span>
+      </span>
+      <button data-action="toggle-sidebar" aria-label="Toggle sidebar" class="desktop-toggle-btn hidden md:flex ml-auto text-zinc-400 hover:text-white items-center justify-center w-7 h-7 relative -mr-1">
+        <i class="fa-solid fa-chevron-left text-[11px]" id="sidebarToggleIcon"></i>
+        <i class="fa-solid fa-circle text-red-500 text-[12px] flex items-center justify-center m-auto" id="sidebarDotIcon"></i>
+      </button>
+      <button data-action="close-sidebar" aria-label="Close navigation menu" class="ml-auto md:hidden text-zinc-400 hover:text-white flex items-center justify-center w-7 h-7 -mr-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 text-[13px]">
+      <a href="#" data-tab="tab-1" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-gauge w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Dashboard</span>
+      </a>
+
+      <div class="pt-4 pb-2 px-3 sidebar-category"><span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Workspace</span></div>
+      <a href="#" data-tab="tab-3" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-wrench w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Marauder</span>
+      </a>
+      <a href="#" data-tab="tab-8" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-display w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Remote</span>
+      </a>
+      <div class="pt-4 pb-2 px-3 sidebar-category"><span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">System</span></div>
+      <a href="#" data-tab="tab-4" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-folder w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Files</span>
+      </a>
+      <a href="#" data-tab="tab-6" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-terminal w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Logs</span>
+      </a>
+      <a href="#" data-tab="tab-2" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-gear w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Settings</span>
+      </a>
+      <a href="#" data-tab="tab-7" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-circle-info w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Help</span>
+      </a>
+    </nav>
+
+  </aside>
+
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 shrink-0 bg-zinc-950/50 backdrop-blur-md border-b border-zinc-800/80 flex items-center justify-between px-6 md:px-8 sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <button data-action="open-sidebar" aria-label="Open navigation menu" class="md:hidden text-zinc-400 hover:text-white flex items-center justify-center w-7 h-7 -ml-1"><i class="fa-solid fa-bars text-[15px]"></i></button>
+        <h1 id="page-title" class="text-[15px] font-semibold text-white leading-none mt-[2px]">Dashboard</h1>
+        <script>
+          (function() {
+            try {
+              var t = localStorage.getItem('redlily_active_tab') || 'tab-1';
+              var titles = {
+                'tab-1': 'Dashboard',
+                'tab-2': 'Settings',
+                'tab-3': 'Marauder',
+                'tab-4': 'Files',
+                'tab-6': 'Logs',
+                'tab-7': 'Help',
+                'tab-8': 'Remote'
+              };
+              var pt = document.getElementById('page-title');
+              if (pt && titles[t]) pt.innerText = titles[t];
+            } catch(e) {}
+          })();
+        </script>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3"></div>
+    </header>
+
+    <main class="app-main flex-1 overflow-y-auto">
+      <div class="max-w-4xl mx-auto px-6 py-5 md:px-8 md:py-6 lg:p-8 space-y-5">
+        <div id="safeModeBanner" class="hidden items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-amber-300" role="alert">
+          <i class="fa-solid fa-triangle-exclamation shrink-0"></i>
+          <div><div class="font-semibold text-[13px]">Safe Mode active</div><div class="text-[11px] text-amber-200/80">Marauder skipped after repeated crash boots.</div></div>
+        </div>
+
+
+
+                <!-- Dashboard status and device controls. -->
+                <div id="tab-1" class="tab-pane active space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-x-6 lg:gap-x-12 sm:gap-y-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-dot text-zinc-600 text-[13px] w-4 text-center" role="img" title="Status" aria-label="Status"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Status</span>
+                                <span id="status" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-temperature-half text-zinc-600 text-[13px] w-4 text-center" role="img" title="Temperature" aria-label="Temperature"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Temp</span>
+                                <span id="temperatureMetric" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-zinc-600 text-[13px] w-4 text-center" role="img" title="Uptime" aria-label="Uptime"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Uptime</span>
+                                <span id="uptime" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i id="usbModeIcon" class="fa-brands fa-usb text-zinc-600 text-[13px] w-4 text-center" role="img" title="USB mode" aria-label="USB mode"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">USB</span>
+                                <span id="USBmode" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-sd-card text-zinc-600 text-[13px] w-4 text-center" role="img" title="SD card" aria-label="SD card"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">SD</span>
+                                <span id="sdMetricStatus" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-robot text-zinc-600 text-[13px] w-4 text-center" role="img" title="Agent" aria-label="Agent"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Agent</span>
+                                <span id="agentStatus" class="text-zinc-400 font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-link text-zinc-600 text-[13px] w-4 text-center" role="img" title="Connected host" aria-label="Connected host"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Host</span>
+                                <span id="machineName" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-zinc-600 text-[13px] w-4 text-center" role="img" title="Errors" aria-label="Errors"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Errors</span>
+                                <span id="errorCount" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                        </div>
+                        <span id="agentVersion" class="hidden">Loading...</span><span id="agentCompatibility" class="hidden">Loading...</span>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-server text-zinc-500 text-[11px] mt-[1.5px]"></i> System Resources</div>
+                        <div class="p-5 space-y-5">
+                            <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50">
+                                <div class="flex flex-col gap-1 mb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                                    <div class="flex items-center gap-2 min-w-0"><i class="fa-solid fa-sd-card text-zinc-500 shrink-0"></i><span class="text-[13px] text-zinc-300 font-medium whitespace-nowrap truncate">RedLilyGO Storage</span></div>
+                                    <span class="text-white text-[13px] font-medium whitespace-nowrap shrink-0" id="sdcardText">Loading...</span>
+                                </div>
+                                <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden" id="sdcard_capacity"><div class="h-full bg-red-600 rounded-full transition-all duration-500 progress-bar" style="width: 0%;"></div></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50 flex flex-col">
+                                    <div class="flex items-end justify-between mb-3 shrink-0">
+                                        <div class="flex items-center gap-2"><i class="fa-solid fa-microchip text-zinc-500"></i><span class="text-[13px] text-zinc-300 font-medium">Memory (Heap)</span></div>
+                                        <span class="text-red-400 text-[11px] font-mono font-bold" id="heapLiveText">Loading...</span>
+                                    </div>
+                                    <div class="flex-1 w-full relative min-h-[120px]">
+                                        <canvas id="memoryChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50 flex flex-col">
+                                    <div class="flex items-end justify-between mb-3 shrink-0">
+                                        <div class="flex items-center gap-2"><i class="fa-solid fa-temperature-half text-zinc-500"></i><span class="text-[13px] text-zinc-300 font-medium">Temperature</span></div>
+                                        <span class="text-red-400 text-[11px] font-mono font-bold" id="temperatureLiveText">Loading...</span>
+                                    </div>
+                                    <div class="flex-1 w-full relative min-h-[120px]">
+                                        <canvas id="temperatureChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+
+                <!-- Device and dashboard settings. -->
+                <div id="tab-2" class="tab-pane space-y-5">
+                    <!-- System controls and feature toggles. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-zinc-500 text-[11px] mt-[1.5px]"></i> Control Center
+                        </div>
+                        <div class="px-5">
+                            <div class="flex items-center justify-between py-4 border-b border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Stealth Mode</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Disable all onboard LEDs to remain undetected</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="stealthToggle" onchange="window.fireQuickAction('/settings?stealth=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4 border-b border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Auto-Run Payload</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Execute default.ds automatically on boot</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="autorunToggle" onchange="window.fireQuickAction('/settings?autorun=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Power Saving Mode</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Reduce CPU frequency to save battery</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="powersaveToggle" onchange="window.fireQuickAction('/settings?powersave=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex items-center justify-between py-4 border-t border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Screen Saver</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Show falling text after inactivity</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="screensaverToggle" checked onchange="window.fireQuickAction('/settings?screensaver=' + this.checked)"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-t border-zinc-800 gap-4 sm:gap-2">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Channel Hop Delay</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Seconds to dwell on each channel during scans &amp; sniffs. Runtime only; resets to 1 after reboot.</p>
+                                </div>
+                                  <div class="flex items-center justify-end w-full sm:w-auto gap-3 shrink-0">
+                                      <div class="flex items-center bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden focus-within:border-red-500 transition-colors w-28 settings-action">
+                                          <button type="button" onclick="const e=document.getElementById('channelHopDelay'); e.value=Math.max(1, parseInt(e.value||1)-1);" class="w-9 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors cursor-pointer select-none border-r border-zinc-700">
+                                              <i class="fa-solid fa-minus text-[10px]"></i>
+                                          </button>
+                                          <input type="number" id="channelHopDelay" min="1" max="60" placeholder="-" class="w-10 h-full bg-transparent text-center text-[13px] text-white font-mono outline-none p-0 appearance-none m-0">
+                                          <button type="button" onclick="const e=document.getElementById('channelHopDelay'); e.value=Math.min(60, parseInt(e.value||1)+1);" class="w-9 h-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors cursor-pointer select-none border-l border-zinc-700">
+                                              <i class="fa-solid fa-plus text-[10px]"></i>
+                                          </button>
+                                      </div>
+                                       <button type="button" onclick="window.applyChannelHop()" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Apply</button>
+                                  </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-brands fa-usb text-zinc-500 text-[11px] mt-[1.5px]"></i> USB Device Type</div>
+                        <div class="px-5 py-5 space-y-5">
+                            <div class="flex items-center justify-between bg-zinc-950 rounded-lg px-4 py-3 border border-zinc-800">
+                                <span class="text-[13px] text-zinc-400 font-medium">Active now</span>
+                                <code id="currentUsbDeviceType" class="text-red-400 font-mono text-[13px] sm:text-sm font-semibold">Loading...</code>
+                            </div>
+                            <div class="flex items-center justify-between bg-zinc-950/50 rounded-lg px-4 py-3 border border-zinc-800/50">
+                                <span class="text-[13px] text-zinc-300 font-medium">Saved startup mode</span>
+                                <span class="text-[11px] text-amber-400 font-semibold shrink-0 ml-2 text-right">REBOOT REQUIRED</span>
+                            </div>
+                            <hr class="border-zinc-800">
+                            <form action="/set" method="post" id="usbDeviceTypeForm">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Startup value</label>
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="flex-1 relative">
+                                        <input class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-white placeholder-zinc-600 focus:border-red-500 outline-none font-mono" type="text" id="value" name="value" placeholder="0x0001" pattern="0x000[0-2]" title="Use 0x0000, 0x0001, or 0x0002" required="">
+                                        <input type="hidden" id="name" name="name" value="usbDeviceType">
+                                    </div>
+                                    <button type="submit" class="settings-action bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-5 rounded-lg transition-colors shrink-0 flex items-center justify-center">Save</button>
+                                </div>
+                                <p class="text-[11px] text-zinc-500 mt-1">0x0000 None, 0x0001 Serial, 0x0002 NCM.</p>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Wi-Fi and network configuration. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-wifi text-zinc-500 text-[11px] mt-[1.5px]"></i> Network Configuration
+                        </div>
+                        <form class="p-5 space-y-3" onsubmit="event.preventDefault(); window.saveNetworkConfig()">
+                            <div>
+                                <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Operating Mode</label>
+                                <div class="w-full relative">
+                                    <select id="wifiMode" class="cdrop-select settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 appearance-none">
+                                        <option value="ap">Access Point (AP Mode)</option>
+                                        <option value="client">Client (Station Mode)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Wi-Fi SSID</label>
+                                    <input id="wifiSsid" name="ssid" autocomplete="off" maxlength="32" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="text" placeholder="Network name">
+                                    <p class="text-[11px] text-zinc-500 mt-1">Used as LilyGO access point name or station network name.</p>
+                                </div>
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Password</label>
+                                    <div class="relative w-full">
+                                        <input id="wifiPass" autocomplete="new-password" maxlength="63" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 pr-10 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="password" placeholder="Leave blank to keep current">
+                                        <button type="button" onclick="const p=document.getElementById('wifiPass'); const i=this.querySelector('i'); if(p.type==='password'){p.type='text'; i.classList.remove('fa-eye'); i.classList.add('fa-eye-slash');}else{p.type='password'; i.classList.remove('fa-eye-slash'); i.classList.add('fa-eye');}" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center p-1">
+                                            <i class="fa-solid fa-eye text-[12px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:justify-end">
+                                <button type="button" onclick="window.saveNetworkConfig()" class="settings-action w-full sm:w-auto justify-center bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-4 rounded-lg transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Save &amp; Apply
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Evil Portal access point configuration. -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2">
+                            <i class="fa-solid fa-tower-broadcast text-zinc-500 text-[11px] mt-[1.5px]"></i> Evil Portal AP
+                        </div>
+                        <form class="p-5 space-y-3" onsubmit="event.preventDefault(); window.savePortalConfig()">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Portal SSID</label>
+                                    <input id="portalSsid" autocomplete="off" maxlength="29" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="text" placeholder="RedLilyGO-Portal">
+                                    <p class="text-[11px] text-zinc-500 mt-1">Portal AP name.</p>
+                                </div>
+                                <div>
+                                    <label class="text-[12px] text-zinc-400 font-medium block mb-1.5">Password</label>
+                                    <div class="relative w-full">
+                                        <input id="portalPass" autocomplete="new-password" maxlength="63" class="settings-action w-full bg-zinc-950 border border-transparent rounded-lg px-4 pr-10 text-[13px] text-zinc-300 outline-none focus:border-red-500 transition-colors" type="password" placeholder="Leave blank to keep current">
+                                        <button type="button" onclick="const p=document.getElementById('portalPass'); const i=this.querySelector('i'); if(p.type==='password'){p.type='text'; i.classList.remove('fa-eye'); i.classList.add('fa-eye-slash');}else{p.type='password'; i.classList.remove('fa-eye-slash'); i.classList.add('fa-eye');}" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center p-1">
+                                            <i class="fa-solid fa-eye text-[12px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between py-3 border-t border-zinc-800">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Open network</p>
+                                    <p class="text-[11px] text-zinc-500 mt-0.5">No password when the portal starts</p>
+                                </div>
+                                <label class="toggle mb-0 shrink-0"><input type="checkbox" id="portalOpen"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+                                <p class="text-[11px] text-zinc-500 sm:mr-auto">Applies on next portal start. DS <code class="text-zinc-400">-n</code>/<code class="text-zinc-400">-p</code> overrides.</p>
+                                <button type="button" onclick="window.savePortalConfig()" class="settings-action w-full sm:w-auto justify-center bg-red-600 hover:bg-red-500 text-white font-semibold text-xs px-4 rounded-lg transition-colors flex items-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk text-[11px]"></i> Save portal AP
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Destructive actions that require explicit confirmation. -->
+                    <div class="bg-zinc-900 border border-red-900/40 rounded-xl overflow-hidden mt-2">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-red-500 flex items-center gap-2 bg-red-950/10">
+                            <i class="fa-solid fa-triangle-exclamation text-zinc-500 text-[11px] mt-[1.5px]"></i> Danger Zone
+                        </div>
+                        <div class="px-5">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-zinc-800 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Reboot System</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Gracefully restart the hardware</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Reboot System', 'Are you sure you want to reboot the hardware?', () => window.fireQuickAction('/system?cmd=reboot'))" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Reboot</button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-zinc-800 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Format RedLilyGO Storage</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Erase all saved scripts, logs, and captures</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Format RedLilyGO Storage', 'WARNING: This will delete all data on the RedLilyGO Storage. Proceed?', () => window.fireQuickAction('/system?cmd=format'))" class="settings-action bg-zinc-800 hover:bg-red-600 text-zinc-300 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-transparent hover:border-red-500 shrink-0">Format Data</button>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between py-3 gap-4">
+                                <div>
+                                    <p class="text-[13px] text-zinc-200 font-medium">Factory Reset</p>
+                                    <p class="text-[12px] text-zinc-500 mt-0.5">Revert all configurations to default state</p>
+                                </div>
+                                <button type="button" onclick="window.showConfirmModal('Factory Reset', 'DANGER: This will reset RedLilyGO to factory defaults. Proceed?', () => window.fireQuickAction('/system?cmd=reset'))" class="settings-action bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white font-semibold text-xs px-4 rounded-lg transition-colors border border-red-800/50 hover:border-red-500 shrink-0">Factory Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payload tools and Marauder controls. -->
+                <div id="tab-3" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center justify-between">
+                            <div class="flex items-center gap-2"><i class="fa-solid fa-wrench text-zinc-500 text-[11px] mt-[1.5px]"></i> Marauder</div>
+                        </div>
+                        <div class="p-5 space-y-5">
+                            <form action="/marauder" method="post" id="marauderForm">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Select Marauder command</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <div class="flex-1">
+                                        <select class="cdrop-select" id="marauderCmd" name="marauderCmd">
+                                            <optgroup label="WiFi Attack">
+                                                <option value="attack -t deauth">Deauth target selected APs</option>
+                                                <option value="attack -t deauth -c">Deauth APs + connected stations</option>
+                                                <option value="attack -t beacon -l">Beacon spam listed SSIDs</option>
+                                                <option value="attack -t beacon -r">Beacon spam random SSIDs</option>
+                                                <option value="attack -t beacon -a">Beacon spam fake AP copies</option>
+                                                <option value="attack -t probe">Probe request flood</option>
+                                                <option value="attack -t rickroll">Rickroll beacon spam</option>
+                                            </optgroup>
+                                            <optgroup label="WiFi Scan / Sniff">
+                                                <option value="scanap">Scan nearby access points</option>
+                                                <option value="scansta">Scan stations / clients</option>
+                                                <option value="sniffraw">WiFi packet capture (PCAP)</option>
+                                                <option value="sniffbeacon">Sniff beacon frames</option>
+                                                <option value="sniffprobe">Sniff probe requests</option>
+                                                <option value="sniffdeauth">Sniff deauth frames</option>
+                                                <option value="sniffpmkid">Capture WPA handshakes (PMKID)</option>
+                                                <option value="sniffpwn">Sniff Pwnagotchi beacons</option>
+                                                <option value="sniffesp">Sniff ESP-Marauder packets</option>
+                                                <option value="sigmon">Monitor signal strength</option>
+                                            </optgroup>
+                                            <optgroup label="WiFi Target / List">
+                                                <option value="list -a">List access points</option>
+                                                <option value="list -s">List SSIDs</option>
+                                                <option value="list -c">List stations / clients</option>
+                                                <option value="select -a 0">Select AP by index</option>
+                                                <option value="select -s 0">Select SSID by index</option>
+                                                <option value="select -c 0">Select station by index</option>
+                                                <option value="clearlist -a">Clear AP list</option>
+                                                <option value="ssid -a -g 30">Generate 30 SSIDs for beacon list</option>
+                                                <option value="ssid -r 0">Remove SSID by index</option>
+                                                <option value="save -a">Save AP list to SD</option>
+                                                <option value="load -a">Load AP list from SD</option>
+                                                <option value="channel">Get current WiFi channel</option>
+                                            </optgroup>
+                                            <optgroup label="Bluetooth">
+                                                <option value="blespam -t all">BLE spam all devices</option>
+                                                <option value="blespam -t apple">BLE spam Apple</option>
+                                                <option value="blespam -t google">BLE spam Google</option>
+                                                <option value="blespam -t samsung">BLE spam Samsung</option>
+                                                <option value="blespam -t windows">BLE spam Windows</option>
+                                                <option value="sniffbt">Sniff Bluetooth traffic</option>
+                                                <option value="sniffskim">Detect card skimmers</option>
+                                            </optgroup>
+                                            <optgroup label="Evil Portal">
+                                                <option value="evilportal -c start">Start Evil Portal captive portal</option>
+                                            </optgroup>
+                                            <optgroup label="System">
+                                                <option value="help">Show all commands</option>
+                                                <option value="settings">View / change settings</option>
+                                                <option value="ls /">List SD files</option>
+                                                <option value="reboot">Reboot device</option>
+                                            </optgroup>
+                                            <optgroup label="Control">
+                                                <option value="stopscan">Stop active scan/attack</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+                                </div>
+                            </form>
+                            <div id="marauderPortalTemplate" class="text-[11px] text-zinc-500 mt-2">Portal template: none selected</div>
+
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="marauderMiniLog"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-robot text-zinc-500 text-[11px] mt-[1.5px]"></i> Agent Command</div>
+                        <div class="p-5">
+                            <form action="/runagentcmd" method="post">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">OS command (agent must be installed)</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative" id="agentAutocompleteWrapper">
+                                    <input id="agentCommandInput" autocomplete="off" class="flex-1 bg-zinc-950 border border-transparent rounded-lg px-4 h-[36px] text-[13px] text-white font-mono placeholder:text-zinc-400 focus:border-red-500 outline-none" type="text" name="rawCommand" placeholder="dir *.txt">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+                                    <div id="agentAutocompleteDropdown" class="absolute top-full left-0 mt-1 w-full sm:w-[calc(100%-80px)] bg-zinc-800 border border-transparent rounded-lg shadow-none overflow-hidden z-50 hidden flex-col" style="max-height: 340px; overflow-y: auto;"></div>
+                                </div>
+                            </form>
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="agentMiniLog"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-code text-zinc-500 text-[11px] mt-[1.5px]"></i> Raw Input</div>
+                        <div class="p-5">
+                            <form action="/rawinput" method="post">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Execute raw command</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative" id="autocompleteWrapper">
+                                    <input id="rawCommandInput" autocomplete="off" class="flex-1 bg-zinc-950 border border-transparent rounded-lg px-4 h-[36px] text-[13px] text-white font-mono placeholder:text-zinc-400 focus:border-red-500 outline-none" type="text" name="rawCommand" placeholder="command...">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+
+                                    <!-- Command suggestions shown while typing. -->
+                                    <div id="autocompleteDropdown" class="absolute top-full left-0 mt-1 w-full sm:w-[calc(100%-80px)] bg-zinc-800 border border-transparent rounded-lg shadow-none overflow-hidden z-50 hidden flex-col" style="max-height: 340px; overflow-y: auto;">
+                                        <!-- JavaScript inserts matching suggestions here. -->
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="rawMiniLog"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- File manager page. -->
+                <div id="tab-4" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-folder-open text-zinc-500 text-[11px] mt-[1.5px]"></i> File Browser</div>
+                        <div class="p-5 space-y-5">
+                            <div id="tree" class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 min-h-[180px] max-h-[350px] overflow-auto text-[13px] sm:text-sm font-mono text-zinc-400">Loading files...</div>
+                            <div class="file-upload-panel relative bg-zinc-900/50 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+                                <form action="/" method="get" class="m-0">
+                                    <div class="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="flex-1 flex flex-col justify-center min-w-0">
+                                            <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">Selected file</span>
+                                            <input class="w-full bg-transparent text-[12px] sm:text-[13px] text-zinc-300 font-mono outline-none cursor-default truncate" type="text" id="fileSelectionBox" readonly="" name="filename" placeholder="No file selected">
+                                        </div>
+                                        <div class="flex gap-2 shrink-0">
+                                            <button type="button" id="fileRunButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Run DuckyScript"><i class="fa-solid fa-play"></i></button>
+                                            <button type="button" id="fileEditButton" onclick="window.previewSelectedFile()" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Preview"><i class="fa-solid fa-file-lines"></i></button>
+                                            <button type="button" id="filePortalButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-orange-600 hover:bg-orange-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Use as Portal Template"><i class="fa-solid fa-door-open"></i></button>
+                                            <button type="submit" id="fileDownloadButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" formaction="/download" formmethod="get" disabled="" title="Download"><i class="fa-solid fa-download"></i></button>
+                                            <button type="button" id="fileDeleteButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-red-300 disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" onclick="window.deleteSelectedFile()" disabled="" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <div class="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/40">
+                                    <div class="flex-1 flex flex-col justify-center min-w-0">
+                                        <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">Upload to SD</span>
+                                        <span class="text-[12px] sm:text-[13px] text-zinc-400 font-mono truncate">Choose destination before upload</span>
+                                    </div>
+                                    <div class="file-upload-controls flex items-center gap-2 shrink-0 min-w-0">
+                                        <select id="fileUploadDirectory" class="cdrop-select" title="Upload destination">
+                                            <option value="Auto">Auto folder</option>
+                                        </select>
+                                        <input id="fileInputBox" type="file" class="hidden" onchange="document.getElementById('fileInputText').textContent = this.files.length ? this.files[0].name : 'Choose file'">
+                                        <label for="fileInputBox" class="cursor-pointer inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[12px] font-mono transition-all truncate max-w-[180px] sm:max-w-[220px]">
+                                            <i class="fa-solid fa-paperclip text-zinc-400 text-[11px] shrink-0"></i>
+                                            <span id="fileInputText" class="truncate">Choose file</span>
+                                        </label>
+                                        <button type="button" onclick="window.uploadFile()" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-red-300 transition-colors text-[12px] shrink-0" title="Upload File">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="fileUploadProgressBar" class="absolute bottom-0 inset-x-0 h-1 bg-zinc-800 overflow-hidden opacity-0 transition-opacity"><div class="h-full w-0 bg-red-500 transition-all"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="filePreviewModal" class="file-preview-modal fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4" style="display:none" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="filePreviewTitle">
+                    <div class="file-preview-panel bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden">
+                        <div class="file-preview-header px-4 py-3 sm:px-5 sm:py-4 border-b border-zinc-800 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div id="filePreviewModeLabel" class="file-preview-kicker">FILE PREVIEW</div>
+                                <div class="file-preview-title-row">
+                                    <h3 id="filePreviewTitle" class="text-sm font-semibold text-zinc-100 truncate">File preview</h3>
+                                    <div class="file-preview-menu">
+                                        <button type="button" id="filePreviewMenuButton" class="file-preview-menu-button" onclick="window.togglePreviewActions(event)" aria-label="File actions" aria-expanded="false" aria-controls="filePreviewActions"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                        <div id="filePreviewActions" class="file-preview-actions" aria-hidden="true">
+                                            <button type="button" id="filePreviewEditButton" onclick="window.editPreviewFile()" class="file-preview-action" title="Edit file"><i class="fa-solid fa-pen"></i><span>Edit</span></button>
+                                            <button type="button" id="filePreviewSaveButton" onclick="window.savePreviewFile()" class="file-preview-action file-preview-save hidden" title="Save file"><i class="fa-solid fa-floppy-disk"></i><span>Save</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="file-preview-header-tools">
+                                <button type="button" onclick="window.closeFilePreview()" class="file-preview-close w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg" aria-label="Close preview"><i class="fa-solid fa-xmark text-xs"></i></button>
+                            </div>
+                        </div>
+                        <pre id="filePreviewContent" class="file-preview-content p-4 sm:p-5 overflow-auto flex-1 bg-zinc-950 text-emerald-300/90 text-xs font-mono whitespace-pre overflow-x-auto"><span class="file-preview-line"><span class="file-preview-line-number">1</span><span class="file-preview-line-text">Loading...</span></span></pre>
+                        <div id="filePreviewEditorShell" class="file-preview-editor-shell hidden">
+                            <div id="filePreviewEditorLines" class="file-preview-editor-lines" aria-hidden="true">1</div>
+                            <textarea id="filePreviewEditor" class="file-preview-editor" spellcheck="false" aria-label="Edit file content"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+<!-- Remote desktop and USB HID controls. -->
+<div id="tab-8" class="tab-pane space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 w-full max-w-4xl mx-auto mt-4">
+        <!-- Browser-based remote desktop session. -->
+        <a href="/remote" class="remote-card group">
+            <div>
+                <div class="remote-card-header">
+                    <div class="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-desktop text-[17px]"></i>
+                    </div>
+                    <div class="remote-card-action">
+                        <span>Open Desktop</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+                <h3 class="remote-card-title">Remote Desktop</h3>
+                <p class="remote-card-desc">Full desktop access via VNC for manual control.</p>
+            </div>
+            <div class="remote-card-footer">
+                <span>Requires Host Agent</span>
+                <span class="font-mono text-[10.5px]">Software Level</span>
+            </div>
+        </a>
+
+        <!-- Controls for the device's USB keyboard and mouse interface. -->
+        <a href="/remote/input" class="remote-card group">
+            <div>
+                <div class="remote-card-header">
+                    <div class="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-keyboard text-[17px]"></i>
+                    </div>
+                    <div class="remote-card-action">
+                        <span>Open Controller</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+                <h3 class="remote-card-title">USB HID Controller</h3>
+                <p class="remote-card-desc">Direct hardware mouse and keyboard emulation via USB stack without installing host software.</p>
+            </div>
+            <div class="remote-card-footer">
+                <span>Driverless</span>
+                <span class="font-mono text-[10.5px]">Hardware Level</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+                <!-- Device log viewer and filters. -->
+                <div id="tab-6" class="tab-pane w-full max-w-4xl mx-auto">
+                    <div class="logs-card bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col shadow-none overflow-hidden">
+                        <div class="logs-toolbar border-b border-zinc-800 shrink-0 bg-zinc-950 rounded-t-xl">
+                            <div class="logs-mark" title="System Logs"><i class="fa-solid fa-terminal text-[11px]"></i></div>
+                            <div class="logs-search relative">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="logFilterInput" placeholder="Search logs..." aria-label="Search logs">
+                            </div>
+                            <select id="logCategoryFilter" class="cdrop-select" title="Log category">
+                                <option value="all">All logs</option>
+                                <option value="system">System</option>
+                                <option value="marauder">Marauder</option>
+                                <option value="ducky">Ducky</option>
+                                <option value="agent">Agent</option>
+                            </select>
+                            <div class="logs-actions">
+                                <button type="button" onclick="window.loadSavedLog()" title="Load saved SD log"><i class="fa-solid fa-hard-drive"></i><span>SD Log</span></button>
+                                <label title="Auto-scroll toggle"><input type="checkbox" id="autoScrollLogs" class="hidden" checked=""><i class="fa-solid fa-angles-down text-emerald-400 transition-colors" id="autoScrollIcon"></i></label>
+                                <button type="button" onclick="window.clearRuntimeLogs()" title="Clear runtime logs" class="btn-delete"><i class="fa-solid fa-trash"></i></button>
+                                <span id="savedLogStatus" class="hidden">Live Logs</span>
+                            </div>
+                        </div>
+
+                        <!-- Scrollable log output. -->
+                        <div class="flex-1 relative min-h-0 bg-[#0A0A0C] rounded-b-xl overflow-hidden">
+                            <textarea id="logBox" class="absolute inset-0 w-full h-full bg-transparent text-emerald-400/90 font-mono text-[13px] leading-relaxed p-4 sm:p-5 resize-none outline-none border-0 custom-scrollbar" name="logBox" readonly="" placeholder="Waiting for log data..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help, diagnostics, and project information. -->
+                <div id="tab-7" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-shield text-lg"></i></div>
+                            <div>
+                                <p class="text-[13px] text-zinc-200 font-medium">Security Audit Report</p>
+                                <p class="text-[12px] text-zinc-500">Summarize scans, captures, and detections into a downloadable file</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.generateReport()" class="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shrink-0"><i class="fa-solid fa-download text-[11px]"></i> Generate Report</button>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-book-bookmark text-zinc-500 text-[11px] mt-[1.5px]"></i> Resources</div>
+                        <div class="divide-y divide-zinc-800">
+                            <a href="https://docs.hak5.org/hak5-usb-rubber-ducky/duckyscript-tm-quick-reference" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-book text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">DuckyScript Quick Reference</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/zis3c/RedLilyGO#readme" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-file-lines text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">Documentation</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/zis3c/RedLilyGO/issues" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-bug text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">GitHub Issues</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/justcallmekoko/ESP32Marauder/wiki" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-shield text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">ESP32 Marauder Wiki</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-[13px] text-zinc-400 space-y-2">
+                        <p>
+                            <strong class="text-zinc-200">RedLilyGO</strong> is created by
+                            <a href="https://github.com/zis3c/RedLilyGO" target="_blank" class="text-red-500 hover:text-red-400 font-medium transition-colors">zis3c</a>.
+                        </p>
+                        <p class="text-[12px] text-zinc-500">
+                            Based on the original USBArmyKnife project by
+                            <a href="https://github.com/i-am-shodan/USBArmyKnife" target="_blank" class="text-zinc-300 hover:text-white font-medium transition-colors whitespace-nowrap">i-am-shodan</a>.
+                        </p>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="h-6"></div>
+        </main>
+    </div>
+
+    <!-- Shared container for transient status messages. -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+
+
+    <!-- Load the compiled dashboard code after its markup is included. -->
+    <script src="/assets/js/ui.js" onerror="window.retryEmbeddedAsset(this)"></script>
+
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 overflow-hidden" id="confirmModalContent">
+      <div class="p-6 text-center">
+        <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 class="text-[15px] font-bold text-white mb-2" id="confirmModalTitle">Are you sure?</h3>
+        <p class="text-zinc-400 text-[13px] mb-6" id="confirmModalText">This action cannot be undone.</p>
+        <div class="flex items-center gap-3">
+          <button type="button" id="confirmModalCancel" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-[13px] py-2.5 rounded-lg transition-colors">Cancel</button>
+          <button type="button" id="confirmModalConfirm" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] py-2.5 rounded-lg transition-colors">Proceed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+</html>

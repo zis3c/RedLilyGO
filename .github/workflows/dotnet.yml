@@ -1,0 +1,66 @@
+# Build and test the Windows Agent, verify standalone publishing, and upload its binaries.
+# Run for Agent source changes and pull requests targeting main.
+
+name: RedLilyGO Agent (.NET)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'tools/Agent/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'tools/Agent/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 8.0.x
+    - name: Build
+      run: dotnet publish -r win-x64
+      working-directory: .\tools\Agent
+    - name: Run Agent serial protocol test
+      run: dotnet run --project .\tools\Agent.Tests\Agent.Tests.csproj --configuration Release
+    - name: Build Agent tests for coverage
+      run: dotnet build .\tools\Agent.Tests\Agent.Tests.csproj --configuration Release
+    - name: Install coverlet
+      run: dotnet tool install --global coverlet.console
+    - name: Collect Agent coverage
+      shell: pwsh
+      run: |
+        & "$env:USERPROFILE\.dotnet\tools\coverlet.exe" `
+          tools/Agent/bin/Release/net8.0-windows/RedLilyGO.Agent.dll `
+          --target "dotnet" `
+          --targetargs "tools/Agent.Tests/bin/Release/net8.0-windows/RedLilyGO.Agent.Tests.dll" `
+          --format cobertura --output coverage/
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v7
+      continue-on-error: true
+      with:
+        files: coverage/coverage.cobertura.xml
+        fail_ci_if_error: false
+    - name: Verify standalone publish workflow
+      shell: pwsh
+      run: .\tools\publish-agent.ps1
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Agent binaries
+        path: tools/Agent/bin/Release/net8.0-windows/win-x64/publish/
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-coverage
+        path: coverage/

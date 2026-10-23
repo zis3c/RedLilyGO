@@ -1,0 +1,9 @@
+REM RedLilyGO - Notepad Hello World (Windows HID). Opens Notepad and types a greeting. Authorized testing only.
+DELAY 1000
+GUI r
+DELAY 1000
+STRING notepad
+DELAY 800
+ENTER
+DELAY 4000
+STRING Hello, World!

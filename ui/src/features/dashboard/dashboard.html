@@ -1,0 +1,84 @@
+                <!-- Dashboard status and device controls. -->
+                <div id="tab-1" class="tab-pane active space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-x-6 lg:gap-x-12 sm:gap-y-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-dot text-zinc-600 text-[13px] w-4 text-center" role="img" title="Status" aria-label="Status"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Status</span>
+                                <span id="status" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-temperature-half text-zinc-600 text-[13px] w-4 text-center" role="img" title="Temperature" aria-label="Temperature"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Temp</span>
+                                <span id="temperatureMetric" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-zinc-600 text-[13px] w-4 text-center" role="img" title="Uptime" aria-label="Uptime"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Uptime</span>
+                                <span id="uptime" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i id="usbModeIcon" class="fa-brands fa-usb text-zinc-600 text-[13px] w-4 text-center" role="img" title="USB mode" aria-label="USB mode"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">USB</span>
+                                <span id="USBmode" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-sd-card text-zinc-600 text-[13px] w-4 text-center" role="img" title="SD card" aria-label="SD card"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">SD</span>
+                                <span id="sdMetricStatus" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-robot text-zinc-600 text-[13px] w-4 text-center" role="img" title="Agent" aria-label="Agent"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Agent</span>
+                                <span id="agentStatus" class="text-zinc-400 font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-link text-zinc-600 text-[13px] w-4 text-center" role="img" title="Connected host" aria-label="Connected host"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Host</span>
+                                <span id="machineName" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-zinc-600 text-[13px] w-4 text-center" role="img" title="Errors" aria-label="Errors"></i>
+                                <span class="text-zinc-400 text-[11px] uppercase tracking-wider hidden xl:block">Errors</span>
+                                <span id="errorCount" class="text-white font-medium text-[13px] truncate">Loading...</span>
+                            </div>
+                        </div>
+                        <span id="agentVersion" class="hidden">Loading...</span><span id="agentCompatibility" class="hidden">Loading...</span>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-server text-zinc-500 text-[11px] mt-[1.5px]"></i> System Resources</div>
+                        <div class="p-5 space-y-5">
+                            <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50">
+                                <div class="flex flex-col gap-1 mb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                                    <div class="flex items-center gap-2 min-w-0"><i class="fa-solid fa-sd-card text-zinc-500 shrink-0"></i><span class="text-[13px] text-zinc-300 font-medium whitespace-nowrap truncate">RedLilyGO Storage</span></div>
+                                    <span class="text-white text-[13px] font-medium whitespace-nowrap shrink-0" id="sdcardText">Loading...</span>
+                                </div>
+                                <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden" id="sdcard_capacity"><div class="h-full bg-red-600 rounded-full transition-all duration-500 progress-bar" style="width: 0%;"></div></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50 flex flex-col">
+                                    <div class="flex items-end justify-between mb-3 shrink-0">
+                                        <div class="flex items-center gap-2"><i class="fa-solid fa-microchip text-zinc-500"></i><span class="text-[13px] text-zinc-300 font-medium">Memory (Heap)</span></div>
+                                        <span class="text-red-400 text-[11px] font-mono font-bold" id="heapLiveText">Loading...</span>
+                                    </div>
+                                    <div class="flex-1 w-full relative min-h-[120px]">
+                                        <canvas id="memoryChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="bg-zinc-950/50 rounded-lg p-4 border border-zinc-800/50 flex flex-col">
+                                    <div class="flex items-end justify-between mb-3 shrink-0">
+                                        <div class="flex items-center gap-2"><i class="fa-solid fa-temperature-half text-zinc-500"></i><span class="text-[13px] text-zinc-300 font-medium">Temperature</span></div>
+                                        <span class="text-red-400 text-[11px] font-mono font-bold" id="temperatureLiveText">Loading...</span>
+                                    </div>
+                                    <div class="flex-1 w-full relative min-h-[120px]">
+                                        <canvas id="temperatureChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+

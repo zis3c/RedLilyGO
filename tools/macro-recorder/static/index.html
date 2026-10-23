@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local Macro Recorder</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">Local Macro / Keyboard Recorder</div>
+    <div class="status-group">
+      <span id="badge" class="badge off">IDLE</span>
+      <span id="count" class="count">0</span> events
+      <span id="connectionStatus" aria-live="polite">Connecting...</span>
+    </div>
+  </header>
+
+  <section class="notice">
+    Records keystrokes on <strong>this device only</strong>, and only while
+    <strong>Record</strong> is ON. Logs are stored locally and never leave this machine.
+  </section>
+
+  <section class="controls">
+    <button id="btnStart" class="btn btn-start" disabled>&#9679; Record</button>
+    <button id="btnStop" class="btn btn-stop" disabled>&#9632; Stop</button>
+    <button id="btnClear" class="btn">Clear feed</button>
+    <span class="spacer"></span>
+    <button id="btnExportJson" class="btn">Export JSON</button>
+    <button id="btnExportCsv" class="btn">Export CSV</button>
+  </section>
+
+  <section class="feed-wrap">
+    <div id="feed" class="feed"></div>
+  </section>
+
+  <footer>
+    Log file: <span id="logPath">-</span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

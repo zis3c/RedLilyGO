@@ -1,0 +1,123 @@
+/* Custom dropdown control and option list. */
+.cdrop { position: relative; }
+.cdrop-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; background: #09090b; border: 1px solid #3f3f46;
+    border-radius: 0.5rem; padding: 10px 14px; font-size: 13px;
+    color: #e4e4e7; cursor: pointer; transition: border-color .15s;
+    text-align: left; outline: none; user-select: none;
+}
+.cdrop-btn:hover { border-color: #52525b; }
+.cdrop-btn:focus, .cdrop.open .cdrop-btn { border-color: #dc2626; box-shadow: 0 0 0 1px #dc2626; }
+.cdrop-btn .cdrop-chevron { font-size: 10px; color: #71717a; transition: transform .2s; flex-shrink: 0; margin-left: 12px; }
+.cdrop.open .cdrop-chevron { transform: rotate(180deg); }
+.cdrop-btn .cdrop-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cdrop-menu {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #18181b; border: 1px solid #3f3f46; border-radius: 0.5rem;
+    max-height: 260px; overflow-y: auto; z-index: 50;
+    box-shadow: 0 10px 25px rgba(0,0,0,.4);
+    padding: 4px;
+}
+.cdrop.open .cdrop-menu { display: block; animation: cdropIn .15s ease-out; }
+@keyframes cdropIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+.cdrop-menu::-webkit-scrollbar { width: 4px; }
+.cdrop-menu::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+
+.cdrop-group { padding: 6px 10px 4px; font-size: 10px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; user-select: none; }
+.cdrop-item {
+    display: block; width: 100%; padding: 8px 12px; font-size: 13px;
+    color: #a1a1aa; border-radius: 6px; cursor: pointer; transition: all .1s;
+    text-align: left; border: none; background: none; outline: none;
+}
+.cdrop-item:hover { background: rgba(220,38,38,.1); color: #f4f4f5; }
+.cdrop-item.selected { background: rgba(220,38,38,.15); color: #f87171; }
+#tab-3 > .bg-zinc-900 > div:first-child { padding: .7rem .8rem; }
+#tab-3 > .bg-zinc-900 > div:not(:first-child) { padding: .75rem; }
+
+
+
+/* Cards used by the remote-control page. */
+.remote-card {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.25rem 0 1.25rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+@media (min-width: 768px) {
+    .remote-card {
+        padding: 1.5rem 1.5rem 0 1.5rem;
+    }
+}
+.remote-card:hover {
+    background: #1e1e24;
+    border-color: #3f3f46;
+}
+.remote-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+.remote-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f4f4f5;
+    margin: 0;
+    transition: color 0.15s ease;
+}
+.remote-card:hover .remote-card-title {
+    color: #ffffff;
+}
+.remote-card-desc {
+    font-size: 12px;
+    color: #a1a1aa;
+    margin-top: 0.35rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+}
+.remote-card-footer {
+    margin-top: auto;
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+    border-top: 1px solid rgba(63, 63, 70, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    line-height: 1.2;
+    color: #71717a;
+}
+.remote-card-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #71717a;
+    transition: color 0.15s ease;
+}
+.remote-card:hover .remote-card-action {
+    color: #ef4444;
+}
+.remote-card-action i {
+    font-size: 10px;
+    transition: transform 0.15s ease;
+}
+.remote-card:hover .remote-card-action i {
+    transform: translateX(3px);
+}
+
+/* Confirmation modal layout. */
+#confirmModalContent {
+    background-color: #18181b !important;
+    border: 1px solid #27272a !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85) !important;
+}
