@@ -11,7 +11,7 @@ jobs:
   firmware:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - name: Verify release version
@@ -57,7 +57,7 @@ jobs:
   agent:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
@@ -92,7 +92,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - uses: actions/setup-node@v7
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: source
       - name: Add release documentation
