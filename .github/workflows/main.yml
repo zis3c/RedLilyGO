@@ -80,7 +80,7 @@ jobs:
         run: pio run --environment LILYGO-T-Dongle-S3
 
       - name: Upload LILYGO-T-Dongle-S3 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: LILYGO-T-Dongle-S3 Firmware binaries
           path: |

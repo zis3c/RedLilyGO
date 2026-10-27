@@ -45,11 +45,11 @@ jobs:
               done
           done
           python -m zipfile -c firmware-third-party-licenses.zip "$bundle"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: RedLilyGO-firmware
           path: .pio/build/LILYGO-T-Dongle-S3/*.bin
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: RedLilyGO-firmware-third-party-licenses
           path: firmware-third-party-licenses.zip
@@ -82,7 +82,7 @@ jobs:
             Copy-Item $_.FullName $target
           }
           Compress-Archive -Path $bundle -DestinationPath agent-third-party-licenses.zip -Force
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: RedLilyGO-Agent-win-x64
           path: |
