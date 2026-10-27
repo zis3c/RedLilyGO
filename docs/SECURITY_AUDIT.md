@@ -68,7 +68,7 @@ AP password, invalidates most of the mitigations below.
 
 1. **Origin metadata is optional.** Handshakes without `Origin`/`Sec-Fetch-Site`
    are accepted to support non-browser clients.
-2. **Sensitive local data.** System logs, PCAP files, uploads and Agent prompts
+2. **Sensitive local data.** System logs, PCAP files, uploads and Agent command outputs
    can contain private data and are stored unencrypted on the SD card.
 
 ## Verified controls

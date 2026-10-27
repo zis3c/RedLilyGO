@@ -353,7 +353,6 @@ void DisplayInternal::renderPayloadSelectorFrame()
 
 void DisplayInternal::renderScreensaverFrame(unsigned long currentMillis)
 {
-  // Initialize the screensaver animation.
   if (!screensaverInitialized)
   {
     lcd.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, TFT_BLACK);

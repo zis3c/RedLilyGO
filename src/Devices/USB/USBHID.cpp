@@ -89,7 +89,6 @@ void USBHID::begin(Preferences &prefs)
             Debug::Log.error("USB", "Could not allocate USB HID.");
             return;
         }
-        // Configure the polling interval and report descriptor before registration.
         usb_hid->setPollInterval(2);
         usb_hid->setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
         usb_hid->setStringDescriptor("HID Composite");

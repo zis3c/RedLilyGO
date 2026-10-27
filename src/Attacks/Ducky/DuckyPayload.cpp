@@ -33,17 +33,13 @@ extern void DuckyInterpreterLog(uint8_t level, const char *format, ...)
         const int bufferSize = 1024;
         char buffer[bufferSize];
 
-        // Collect the arguments supplied for the format string.
         va_list args;
         va_start(args, format);
 
-        // Format the parser message before sending it to the logger.
         vsnprintf(buffer, bufferSize, format, args);
 
-        // Release the argument-list state after formatting.
         va_end(args);
 
-        // Pass an owned string to the logging API.
         std::string logMessage(buffer);
         Debug::Log.info("DUCKY", logMessage);
     }
@@ -305,7 +301,6 @@ void DuckyPayload::setPayload(const std::string &path)
         Debug::Log.warning(LOG_DUCKY, "A payload is already running. Resetting it now.");
     }
 
-    // Copy the requested path into the interpreter's owned string.
     std::string newFileToExecute(path.c_str(), path.length());
     currentlyExecutingFile = newFileToExecute;
     lastExecutionResult = 0;

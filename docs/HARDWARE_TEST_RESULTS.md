@@ -32,8 +32,13 @@ are not reproduced by the automated host checks.
 
 ### Client devices used
 
-Manual checks used an iPhone XS, a Samsung Galaxy A30, a Huawei MateBook D14
-2021, and a Samsung Galaxy Tab A8.
+Manual checks were performed across available test hardware during the project:
+- **PC Huawei MateBook D14** (Host PC / Windows 11)
+- **Samsung Galaxy A30** (Android mobile client)
+- **iPhone XS** (iOS mobile client)
+- **Perantisiswa A8 (Samsung Galaxy Tab A8)** (Android tablet client)
+
+Recorded feature demonstrations across these interfaces are cataloged in [docs/VIDEO_OVERVIEW.md](./VIDEO_OVERVIEW.md).
 
 ## Automated evidence
 

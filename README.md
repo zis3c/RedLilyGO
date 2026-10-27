@@ -17,7 +17,7 @@ RedLilyGO combines USB device modes, Wi-Fi and Bluetooth assessment workflows,
 SD-backed files and captures, a local web console, and an optional Windows
 Agent. The repository is intended for development and authorized lab use.
 
-![LILYGO T-Dongle-S3](./docs/images/lilygo-t-dongle-s3-front-view-1200x1200.jpg)
+![RedLilyGO Hardware](./docs/images/redlilygo-hardware.png)
 
 > RedLilyGO is designed for authorized security testing, education, hardware
 > development, and controlled demonstrations. Use it only on systems, devices,
@@ -265,6 +265,17 @@ firmware continues running.
 Set `usbDeviceType` to NCM, reconnect USB, run the approved capture flow, and
 check `/Captures/Other/usbncm_0.pcap` after capture stops.
 
+### Feature tutorials & video walkthroughs
+
+Step-by-step hands-on tutorials walking through AP connection, web configuration,
+native USB HID control, DuckyScript payloads, Marauder beacon spam, and EvilAP
+workflows are documented in [docs/VIDEO_OVERVIEW.md](./docs/VIDEO_OVERVIEW.md).
+
+Manual client compatibility was verified across four personal testing devices:
+Huawei MateBook D14 (host PC), Samsung Galaxy A30, iPhone XS, and Perantisiswa A8
+(Samsung Galaxy Tab A8).
+
+
 ## Project layout
 
 ```text
@@ -329,6 +340,7 @@ generated tree.
 - [Intended-use notice](./NOTICE.md)
 - [Security review](./docs/SECURITY_AUDIT.md)
 - [Windows Agent guide](./tools/Agent/README.md)
+- [Feature tutorials & video walkthroughs](./docs/VIDEO_OVERVIEW.md)
 
 ## Verification
 
