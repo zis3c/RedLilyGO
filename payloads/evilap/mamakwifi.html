@@ -1,0 +1,338 @@
+<!--
+  Synthetic captive-portal training page. This is NOT a real login page and it
+  imitates no real company. It uses a generic "Mamak WiFi" kopitiam theme with
+  no third-party logo or trademark. Use only in an isolated, authorized lab with
+  synthetic test data.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mamak WiFi</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a5c3a'/%3E%3Cpath d='M8 13h13v6a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5z' fill='%23f4e3c1'/%3E%3Cpath d='M21 14h2a3 3 0 0 1 0 6h-2z' fill='none' stroke='%23f4e3c1' stroke-width='2'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --ink: #33261a;
+            --muted: #8a7157;
+            --line: #e7d8be;
+            --green: #1f6b45;
+            --green-dark: #16512f;
+            --amber: #d97706;
+            --amber-dark: #b45309;
+            --cream: #fbf4e6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(900px 420px at 50% -120px, rgba(217, 119, 6, .12), transparent 65%),
+                radial-gradient(700px 360px at 100% 115%, rgba(31, 107, 69, .12), transparent 60%),
+                var(--cream);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Striped awning across the top, like a mamak stall canopy. */
+        .awning {
+            height: 13px;
+            background-image: repeating-linear-gradient(
+                90deg,
+                var(--green) 0 26px,
+                #fbf4e6 26px 52px
+            );
+            box-shadow: 0 2px 6px rgba(22, 81, 47, .22);
+        }
+
+        header {
+            display: flex;
+            justify-content: center;
+            padding: 30px 20px 4px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Coffee cup with rising steam, drawn in CSS. */
+        .mark {
+            position: relative;
+            width: 30px;
+            height: 26px;
+            flex: none;
+        }
+
+        .mark .cup {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 24px;
+            height: 18px;
+            border: 3px solid var(--green);
+            border-top: 0;
+            border-radius: 0 0 11px 11px;
+            background: linear-gradient(180deg, #f8e7c6, #e9c58c);
+        }
+
+        .mark .cup::after {
+            content: "";
+            position: absolute;
+            right: -9px;
+            top: 3px;
+            width: 8px;
+            height: 8px;
+            border: 3px solid var(--green);
+            border-left: 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .mark .steam {
+            position: absolute;
+            left: 6px;
+            top: -4px;
+            width: 4px;
+            height: 10px;
+            border-radius: 4px;
+            background: var(--amber);
+            opacity: .5;
+            animation: steam 2.2s ease-in-out infinite;
+            box-shadow: 8px 2px 0 rgba(217, 119, 6, .4);
+        }
+
+        @keyframes steam {
+            0%   { transform: translateY(2px) scaleY(.8); opacity: .25; }
+            50%  { transform: translateY(-2px) scaleY(1); opacity: .6; }
+            100% { transform: translateY(2px) scaleY(.8); opacity: .25; }
+        }
+
+        .brand .word {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .brand .word b {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -.01em;
+        }
+
+        .brand .word small {
+            margin-top: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--amber-dark);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 20px 46px;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 36px 30px 30px;
+            background: #fffdf8;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(51, 38, 26, .16);
+            animation: rise .45s ease both;
+        }
+
+        /* Ribbon strip on the card, echoing the awning. */
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 6px;
+            border-radius: 20px 20px 0 0;
+            background-image: repeating-linear-gradient(
+                90deg,
+                var(--green) 0 18px,
+                var(--amber) 18px 36px
+            );
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card h1 {
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            text-align: center;
+        }
+
+        .card .sub {
+            margin-top: -9px;
+            font-size: 14px;
+            color: var(--muted);
+            text-align: center;
+            font-style: italic;
+        }
+
+        label.field {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            margin-top: 7px;
+            padding: 13px 14px;
+            font-size: 16px;
+            color: var(--ink);
+            background: #fff;
+            border: 1.5px solid var(--line);
+            border-radius: 11px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #b9a68c;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(31, 107, 69, .16);
+        }
+
+        button[type="submit"] {
+            margin-top: 6px;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: .02em;
+            color: #fff;
+            background: linear-gradient(180deg, var(--green), var(--green-dark));
+            border: 0;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(31, 107, 69, .28);
+            transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
+        }
+
+        button[type="submit"]:hover {
+            background: linear-gradient(180deg, #24804f, var(--green-dark));
+            box-shadow: 0 10px 22px rgba(31, 107, 69, .34);
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(1px);
+        }
+
+        button[type="submit"]:focus-visible {
+            outline: 3px solid rgba(217, 119, 6, .5);
+            outline-offset: 2px;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            font-size: 13px;
+        }
+
+        .links a {
+            color: var(--amber-dark);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--line);
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            background: rgba(255, 253, 248, .7);
+        }
+
+        footer .tag {
+            color: var(--green);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="awning" aria-hidden="true"></div>
+
+    <header>
+        <span class="brand">
+            <span class="mark" aria-hidden="true">
+                <span class="steam"></span>
+                <span class="cup"></span>
+            </span>
+            <span class="word">Mamak WiFi<small>Kopi &amp; Teh Tarik</small></span>
+        </span>
+    </header>
+
+    <main>
+        <form class="card" action="/get" method="get" id="guest-signin">
+            <h1>Mamak WiFi</h1>
+            <p class="sub">Kopi dulu, WiFi kemudian.</p>
+
+            <div>
+                <label class="field" for="email">Email</label>
+                <input id="email" name="email" type="email" inputmode="email" autocomplete="username"
+                    placeholder="name@example.test" required>
+            </div>
+
+            <div>
+                <label class="field" for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password"
+                    placeholder="Password" required>
+            </div>
+
+            <button type="submit">Sign in</button>
+
+            <div class="links">
+                <a href="#">Lupa password?</a>
+                <a href="#">Daftar akaun</a>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <span class="tag">Mamak WiFi</span> &middot; 24 jam &middot; Buka hari-hari
+    </footer>
+</body>
+
+</html>

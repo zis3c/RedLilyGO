@@ -1,0 +1,20 @@
+---
+# Used by: pio check -e LILYGO-T-Dongle-S3 --check-tool clangtidy
+# Kept to correctness-oriented checks so the firmware build stays green while
+# still catching real defects. Style is not enforced here.
+Checks: >-
+  bugprone-*,
+  clang-analyzer-*,
+  performance-*,
+  portability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-macro-parentheses,
+  -bugprone-branch-clone,
+  -bugprone-reserved-identifier,
+  -performance-no-int-to-ptr,
+  -portability-avoid-pragma-once,
+  -clang-analyzer-optin.*
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*[\\/]src[\\/].*'
+FormatStyle: none

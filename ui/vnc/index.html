@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23ef4444'/%3E%3C/svg%3E">
+
+    <!--
+    noVNC example: lightweight example using minimal UI and features
+
+    This is a self-contained file which doesn't import WebUtil or external CSS.
+
+    Copyright (C) 2019 The noVNC Authors
+    noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
+    This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
+
+    Connect parameters are provided in query string:
+        http://example.com/?host=HOST&port=PORT&scale=true
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RedLilyGO Remote</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10' fill='%23ef4444'/%3E%3C/svg%3E">
+
+    <style>
+        :root {
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #fafafa;
+            --muted: #a1a1aa;
+            --primary: #ef4444;
+            --primary-hover: #dc2626;
+        }
+
+        html {
+            height: 100%;
+            overflow: hidden;
+            /* Full-screen control surface: never hand a vertical drag to
+               Chrome Android's pull-to-refresh gesture. */
+            overscroll-behavior: none;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100svh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        /* -------------------------------------------
+           NORMAL VNC MODE (SCREEN VIEWING)
+           ------------------------------------------- */
+
+        /* HEADER (Compact for normal VNC) */
+        #top_bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(9, 9, 11, 0.95);
+            border-bottom: 1px solid #1f1f22;
+            padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-left)) 8px max(12px, env(safe-area-inset-right));
+            z-index: 50;
+            max-height: 40px;
+            overflow: hidden;
+            touch-action: none;
+            transition: max-height 420ms cubic-bezier(0.22, 1, 0.36, 1), padding 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease;
+        }
+        .header-left, .header-right { display: flex; align-items: center; gap: 8px; }
+
+        #status {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--primary);
+            text-align: center;
+            white-space: nowrap;
+            max-width: calc(100% - 160px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+
+        /* BUTTONS */
+        .remote_button {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .remote_button:active { background: #27272a; color: white; }
+        .remote_button.primary-btn { color: var(--primary); }
+        .remote_button.is-latched { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.55); color: #fecaca; }
+
+        /* REMOTE CONTROLS (Compact top row for normal VNC) */
+        #remote_controls {
+            display: flex;
+            gap: 4px;
+            flex: 0 0 auto;
+            min-width: 0;
+            padding: 6px max(10px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+            background: #09090b;
+            border-bottom: 1px solid #1f1f22;
+            overflow-x: auto;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            z-index: 40;
+            max-height: 80px;
+            transition: max-height 420ms cubic-bezier(0.22, 1, 0.36, 1), padding 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease;
+        }
+        #remote_controls::-webkit-scrollbar { display: none; }
+
+        .control-group {
+            display: flex; gap: 4px; padding-right: 10px; border-right: 1px solid #1f1f22; margin-right: 4px;
+        }
+        .control-group:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+
+        #remote_controls .remote_button { background: #18181b; border: 1px solid #27272a; }
+        body.input-only .control-group { border-right: none; margin-right: 0; padding-right: 0; }
+        body.input-only #remote_controls .remote_button { background: #18181b; border: 1px solid #27272a; color: #a1a1aa; }
+        body.input-only #remote_controls .remote_button:hover,
+        body.input-only #remote_controls .remote_button:focus-visible { background: #27272a; border-color: #3f3f46; color: #ffffff; }
+        body.input-only #lockButton.is-locked,
+        body.input-only #lockButton.is-locked:hover,
+        body.input-only #lockButton.is-locked:focus-visible {
+            background: rgba(127, 29, 29, 0.45);
+            border-color: rgba(248, 113, 113, 0.55);
+            color: #fca5a5;
+        }
+        .remote_button .btn-text { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: currentColor; }
+
+        /* SCREEN */
+        #screen {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+        #input_only_surface { display: none; }
+
+        #frameLoading {
+            position: absolute;
+            inset: 0;
+            z-index: 60;
+            display: grid;
+            place-content: center;
+            justify-items: center;
+            gap: 14px;
+            padding: 24px;
+            box-sizing: border-box;
+            text-align: center;
+            background: radial-gradient(circle at center, #202024, #09090b 72%);
+            pointer-events: none;
+            transition: opacity 250ms ease, visibility 250ms ease;
+        }
+        #frameLoading.is-ready { opacity: 0; visibility: hidden; pointer-events: none; }
+        body.input-only #frameLoading { display: none; }
+        .loading-monitor {
+            width: 52px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            color: #f87171;
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            box-shadow: 0 0 24px rgba(239, 68, 68, 0.18);
+            animation: loading-pulse 1.8s ease-in-out infinite;
+        }
+        .loading-monitor::after { content: ''; width: 20px; height: 2px; background: currentColor; border-radius: 2px; }
+        #frameLoading strong { font-size: 16px; }
+        #frameLoading .loading-stage { color: var(--muted); font-size: 12px; min-height: 16px; }
+        .loading-track { width: min(220px, 65vw); height: 3px; overflow: hidden; border-radius: 3px; background: #27272a; }
+        .loading-track::after {
+            content: '';
+            display: block;
+            width: 36%;
+            height: 100%;
+            background: #ef4444;
+            border-radius: inherit;
+            animation: loading-slide 1.5s ease-in-out infinite;
+        }
+        #loadingRetry { color: #fca5a5; border: 1px solid #7f1d1d; background: #281316; margin-top: 2px; pointer-events: auto; }
+        @keyframes loading-pulse { 50% { opacity: .5; transform: scale(.95); } }
+        @keyframes loading-slide { from { transform: translateX(-100%); } to { transform: translateX(280%); } }
+        @media (prefers-reduced-motion: reduce) {
+            .loading-monitor, .loading-track::after { animation: none; }
+        }
+
+
+        /* -------------------------------------------
+           Input Only Mode specific (Minimal Overrides)
+           ------------------------------------------- */
+
+        body.input-only #screen {
+            background: #09090b;
+            margin: 24px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        body.input-only,
+        body.input-only * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body.input-only #input_only_surface {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .trackpad-indicator {
+            width: 34px;
+            height: 22px;
+            background: transparent;
+            border: 1.5px solid rgba(255, 255, 255, 0.38);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .trackpad-indicator::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 3px;
+            width: 10px;
+            height: 1.5px;
+            transform: translateX(-50%);
+            border-radius: 1.5px;
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        /* HINT & UTILS */
+        #mobile_keyboard_input { position: fixed; left: -10000px; opacity: 0; }
+
+        #hint {
+            position: absolute;
+            top: calc(64px + env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(24, 24, 27, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            color: #e4e4e7;
+            padding: 8px 16px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            pointer-events: none;
+            white-space: nowrap;
+            min-width: 180px;
+            max-width: min(86vw, 420px);
+            box-sizing: border-box;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 200ms ease, visibility 200ms ease;
+            z-index: 100;
+        }
+        #hint.show { opacity: 1; visibility: visible; }
+        #hint::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            flex: 0 0 7px;
+            border-radius: 50%;
+            background: var(--hint-dot);
+            box-shadow: 0 0 8px var(--hint-dot);
+        }
+        #hint[data-tone="info"] { --hint-dot: #facc15; }
+        #hint[data-tone="warning"] { --hint-dot: #ef4444; }
+        #hint[data-tone="success"] { --hint-dot: #22c55e; }
+        #exitOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 300ms ease;
+        }
+
+        #exitOverlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .exit-modal {
+            width: 280px;
+            max-width: 90vw;
+            padding: 24px;
+            border-radius: 24px;
+            background: #18181b;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+            transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #exitOverlay.show .exit-modal {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .hint-btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            width: 100%;
+        }
+        .hint-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 100ms ease, opacity 200ms ease;
+        }
+        .hint-btn:active { transform: scale(0.95); }
+        .hint-btn.cancel { background: rgba(255,255,255,0.1); color: white; }
+        .hint-btn.confirm { background: #ef4444; color: white; }
+
+        .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .icon.text-icon { width: 28px; min-width: 28px; overflow: visible; }
+
+        body.input-only #sendCtrlAltDelButton { display: none; }
+
+        /* Hide labels in BOTH modes for absolute consistency */
+        .remote_button .btn-lbl { display: none !important; }
+        #status { display: none !important; }
+
+        body:not(.input-only) #lockButton, body:not(.input-only) .input-only-control { display: none !important; }
+        body.input-only .input-only-control { display: flex !important; }
+        #lockButton .lock-state { display: none; }
+        #lockButton .lock-icon { display: none; }
+        #lockButton .unlock-icon { display: block; }
+        #lockButton.is-locked .lock-icon { display: block; }
+        #lockButton.is-locked .unlock-icon { display: none; }
+
+        /* Agent-offline notice: shown when the host Agent is not running so the
+           page states why VNC cannot connect instead of retrying silently. */
+        #agentNotice {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-sizing: border-box;
+            width: calc(100% - 24px);
+            max-width: 380px;
+            max-height: calc(100% - 24px);
+            overflow-y: auto;
+            background: rgba(24, 24, 27, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: clamp(14px, 4vw, 20px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+            z-index: 90;
+            text-align: center;
+        }
+        #agentNotice.show { display: block; }
+        #agentNotice .notice-icon { margin: 0 auto 10px; width: 40px; height: 40px; }
+        #agentNotice h2 { font-size: 14px; font-weight: 700; color: #fafafa; margin: 0 0 6px; }
+        #agentNotice p { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 12px; }
+        #agentNotice .notice-cmd {
+            display: inline-block;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 11px;
+            color: #e4e4e7;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 4px 8px;
+            word-break: break-all;
+        }
+        #agentNotice .notice-sub { font-size: 11px; color: #a1a1aa; line-height: 1.5; margin: 10px 0 0; }
+        #agentNotice .notice-spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #ef4444;
+            border-radius: 50%;
+            animation: rlgo-spin 0.9s linear infinite;
+            margin-right: 6px;
+            vertical-align: -2px;
+        }
+        @keyframes rlgo-spin { to { transform: rotate(360deg); } }
+        body.input-only #agentNotice { display: none !important; }
+
+        body.chrome-hidden #top_bar, body.chrome-hidden #remote_controls {
+            visibility: hidden;
+            transition: max-height 420ms cubic-bezier(0.22, 1, 0.36, 1), padding 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease, visibility 0s linear 420ms;
+        }
+        body.chrome-hidden #top_bar {
+            max-height: 0;
+            padding-block: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+            border-bottom-color: transparent;
+            pointer-events: none;
+        }
+        body.chrome-hidden #remote_controls {
+            max-height: 0;
+            padding-block: 0;
+            opacity: 0;
+            transform: translateY(20px);
+            border-bottom-color: transparent;
+            pointer-events: none;
+        }
+        #hideControlsButton, #showControlsButton {
+            border-color: transparent;
+            border-radius: 10px;
+            color: var(--muted);
+            width: 40px;
+            min-height: 40px;
+            padding: 0;
+            justify-content: center;
+            transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+        }
+        #hideControlsButton { background: transparent; box-shadow: none; }
+        #showControlsButton {
+            background: rgba(24, 24, 27, 0.92);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        }
+        #hideControlsButton:hover, #showControlsButton:hover {
+            background: #27272a;
+            color: #fafafa;
+        }
+        #showControlsButton:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+        }
+        #hideControlsButton:focus-visible, #showControlsButton:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        #showControlsButton {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 8px);
+            right: max(12px, env(safe-area-inset-left));
+            z-index: 120;
+        }
+        #showControlsButton {
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 240ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1), visibility 240ms;
+        }
+        body.chrome-hidden #showControlsButton {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 240ms ease, transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        body.chrome-hidden #hideControlsButton { visibility: hidden; }
+        @media (prefers-reduced-motion: reduce) {
+            #top_bar, #remote_controls,
+            body.chrome-hidden #top_bar, body.chrome-hidden #remote_controls {
+                transition-duration: 0s;
+                transition-delay: 0s;
+            }
+            #top_bar, #remote_controls, #showControlsButton,
+            body.chrome-hidden #top_bar, body.chrome-hidden #remote_controls,
+            body.chrome-hidden #showControlsButton { transform: none; }
+            #showControlsButton { transition-duration: 180ms; }
+        }
+
+        #workspace { flex: 1; min-width: 0; min-height: 0; display: flex; position: relative; overflow: hidden; }
+        #workspace #screen { flex: 1; min-width: 0; }
+        @media (max-width: 760px) {
+            .remote_button { min-height: 34px; flex: 0 0 auto; }
+            #remote_controls { max-height: 80px; }
+        }
+
+    </style>
+
+
+
+    <script>
+        let remoteHintTimer;
+        window.showRemoteHint = function(message, duration = 2800, tone = 'info') {
+            const hint = document.getElementById('hint');
+            if (!hint) return;
+            clearTimeout(remoteHintTimer);
+            hint.textContent = message;
+            hint.dataset.tone = tone;
+            hint.setAttribute('aria-hidden', 'false');
+            hint.classList.add('show');
+            remoteHintTimer = setTimeout(() => {
+                hint.classList.remove('show');
+                hint.setAttribute('aria-hidden', 'true');
+            }, duration);
+        };
+
+        window.redlilygoVncBootTimer = window.setTimeout(function() {
+            const status = document.getElementById('status');
+            if (status && status.textContent === 'Starting') {
+                status.textContent = 'UI failed';
+                window.showRemoteHint('Remote UI failed to load', 4000, 'warning');
+            }
+        }, 15000);
+
+        function showVncBootError(error) {
+            const status = document.getElementById('status');
+            if (status && (status.textContent === 'Starting' || status.textContent === 'Loading')) {
+                status.textContent = 'UI failed';
+                window.showRemoteHint('Remote UI failed to load', 4000, 'warning');
+            }
+        }
+
+        window.addEventListener('error', function(event) {
+            if (event.target && event.target.tagName === 'SCRIPT') showVncBootError();
+        }, true);
+        window.addEventListener('unhandledrejection', event => showVncBootError(event.reason));
+
+        window.showExitModal = function() {
+            const overlay = document.getElementById('exitOverlay');
+            if (overlay) overlay.classList.add('show');
+        };
+
+        window.closeExitModal = function(e) {
+            if(e) e.stopPropagation();
+            const overlay = document.getElementById('exitOverlay');
+            if (overlay) overlay.classList.remove('show');
+        };
+    </script>
+    <script type="module" crossorigin="anonymous">
+        // Remote display transport and input API.
+        const inputOnly = window.location.pathname === '/remote/input' || readQueryVariable('input_only', false) === 'true';
+        let RFB = null;
+        if (!inputOnly) {
+            const rfbAsset = window.location.pathname === '/remote'
+                ? '/remote/core/rfb.js'
+                : './core/rfb.js';
+            try {
+                RFB = (await import(rfbAsset)).default;
+            } catch (error) {
+                showVncBootError(error);
+                throw error;
+            }
+        }
+
+        let rfb;
+        let desktopName;
+        let reconnectTimer;
+        let reconnectAttempt = 0;
+        let reconnecting = false;
+        let pageLeaving = false;
+        let leavingSession = false;
+        let rfbConnected = false;
+        let rfbConnecting = false;
+        let agentOnline = false;
+        let agentStateChecked = false;
+        let inputSocket;
+        let inputControlsBound = false;
+        let hidUnavailableNotified = false;
+        let inputLocked = false;
+        let latchedModifiers = 0;
+        let inputIdleTimer;
+        let inputReconnectTimer;
+        const inputIdleTimeoutMs = 10 * 60 * 1000;
+        const inputReconnectDelayMs = 2000;
+        const captiveAliasHosts = new Set([
+            'msftconnecttest.com', 'www.msftconnecttest.com',
+            'msftncsi.com', 'www.msftncsi.com',
+            'connectivitycheck.gstatic.com', 'captive.apple.com'
+        ]);
+
+        function redirectCaptiveAlias() {
+            const hostname = window.location.hostname.toLowerCase();
+            if (!captiveAliasHosts.has(hostname)) return false;
+            window.location.replace('http://4.3.2.1' + window.location.pathname + window.location.search + window.location.hash);
+            return true;
+        }
+
+        const hidKeys = {
+            KeyA: 4, KeyB: 5, KeyC: 6, KeyD: 7, KeyE: 8, KeyF: 9, KeyG: 10, KeyH: 11,
+            KeyI: 12, KeyJ: 13, KeyK: 14, KeyL: 15, KeyM: 16, KeyN: 17, KeyO: 18, KeyP: 19,
+            KeyQ: 20, KeyR: 21, KeyS: 22, KeyT: 23, KeyU: 24, KeyV: 25, KeyW: 26, KeyX: 27,
+            KeyY: 28, KeyZ: 29, Digit1: 30, Digit2: 31, Digit3: 32, Digit4: 33, Digit5: 34,
+            Digit6: 35, Digit7: 36, Digit8: 37, Digit9: 38, Digit0: 39, Enter: 40, Escape: 41,
+            Backspace: 42, Tab: 43, Space: 44, Minus: 45, Equal: 46, BracketLeft: 47,
+            BracketRight: 48, Backslash: 49, Semicolon: 51, Quote: 52, Backquote: 53,
+            Comma: 54, Period: 55, Slash: 56, CapsLock: 57, F1: 58, F2: 59, F3: 60, F4: 61,
+            F5: 62, F6: 63, F7: 64, F8: 65, F9: 66, F10: 67, F11: 68, F12: 69,
+            PrintScreen: 70, ScrollLock: 71, Pause: 72, Insert: 73, Home: 74, PageUp: 75,
+            Delete: 76, End: 77, PageDown: 78, ArrowRight: 79, ArrowLeft: 80, ArrowDown: 81,
+            ArrowUp: 82, NumLock: 83, NumpadDivide: 84, NumpadMultiply: 85, NumpadSubtract: 86,
+            NumpadAdd: 87, NumpadEnter: 88, Numpad1: 89, Numpad2: 90, Numpad3: 91,
+            Numpad4: 92, Numpad5: 93, Numpad6: 94, Numpad7: 95, Numpad8: 96, Numpad9: 97,
+            Numpad0: 98, NumpadDecimal: 99, ContextMenu: 101
+        };
+        const hidModifiers = {
+            ControlLeft: 1, ShiftLeft: 2, AltLeft: 4, MetaLeft: 8,
+            ControlRight: 16, ShiftRight: 32, AltRight: 64, MetaRight: 128
+        };
+
+        function sendInput(command) {
+            const isRelease = command.type === 'release' || (command.type === 'button' && command.pressed === false);
+            if (inputLocked && !isRelease) return;
+            if (inputSocket && inputSocket.readyState === WebSocket.OPEN) {
+                hidUnavailableNotified = false;
+                inputSocket.send(JSON.stringify(command));
+                clearTimeout(inputIdleTimer);
+                inputIdleTimer = setTimeout(() => setInputLocked(true, 'HID locked after inactivity'), inputIdleTimeoutMs);
+                return true;
+            }
+            if (!hidUnavailableNotified) {
+                hidUnavailableNotified = true;
+                status('USB HID unavailable');
+                window.showRemoteHint('USB HID unavailable', 2800, 'warning');
+            }
+            return false;
+        }
+
+        function setInputLocked(locked, message) {
+            inputLocked = locked;
+            const button = document.getElementById('lockButton');
+            if (button) {
+                const action = locked ? 'Unlock' : 'Lock';
+                button.setAttribute('aria-pressed', String(locked));
+                button.setAttribute('aria-label', `${action} HID input`);
+                button.title = `${action} HID input`;
+                button.classList.toggle('is-locked', locked);
+                button.dataset.locked = String(locked);
+            }
+            if (message) {
+                status(message);
+                window.showRemoteHint(message, 2800, locked ? 'warning' : 'info');
+            }
+            if (inputSocket && inputSocket.readyState === WebSocket.OPEN) {
+                inputSocket.send(JSON.stringify({ type: locked ? 'lock' : 'unlock' }));
+            }
+        }
+
+        function toggleInputLock() {
+            setInputLocked(!inputLocked);
+        }
+
+        function sendShortcut(code, modifiers) {
+            const key = hidKeys[code];
+            if (key === undefined) return;
+            sendInput({ type: 'key', key, modifiers: modifiers | latchedModifiers });
+            setTimeout(() => sendInput({ type: 'release' }), 30);
+            latchedModifiers = 0;
+            syncModifierButtons();
+        }
+
+        function sendThreeFingerGesture(dx, dy) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Windows-style app switching: direction controls Alt+Tab order.
+                sendShortcut('Tab', dx > 0 ? 4 : 6);
+                return;
+            }
+            // Windows-style desktop/task view gestures.
+            sendShortcut(dy < 0 ? 'Tab' : 'KeyD', 8);
+        }
+
+        function releaseInputState() {
+            sendInput({ type: 'release' });
+            sendInput({ type: 'button', button: 0, pressed: false });
+            sendInput({ type: 'button', button: 1, pressed: false });
+            sendInput({ type: 'button', button: 2, pressed: false });
+        }
+
+        function connectInput() {
+            clearTimeout(inputReconnectTimer);
+            const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            if (inputSocket && inputSocket.readyState < WebSocket.CLOSING) inputSocket.close(1000, 'reconnect');
+            window.showRemoteHint('Connecting to USB HID');
+            const socket = new WebSocket(scheme + window.location.host + '/input');
+            inputSocket = socket;
+            socket.onopen = () => {
+                if (inputSocket !== socket) return;
+                hidUnavailableNotified = false;
+                clearTimeout(inputIdleTimer);
+                inputIdleTimer = setTimeout(() => setInputLocked(true, 'HID locked after inactivity'), inputIdleTimeoutMs);
+                const reconnectButton = document.getElementById('reconnectButton');
+                if (reconnectButton) reconnectButton.style.display = 'none';
+                status('USB HID connected');
+                window.showRemoteHint('USB HID ready!', 2800, 'success');
+            };
+            socket.onclose = event => {
+                if (inputSocket !== socket) return;
+                clearTimeout(inputIdleTimer);
+                hidUnavailableNotified = true;
+                status(event.reason || 'USB HID disconnected');
+                window.showRemoteHint('USB HID disconnected', 2800, 'warning');
+                const reconnectButton = document.getElementById('reconnectButton');
+                if (reconnectButton) reconnectButton.style.display = 'inline-flex';
+                // The dashboard Wi-Fi/web server restarts when Marauder's radio
+                // mode changes, which closes this socket. Reconnect so HID state
+                // and the status LED recover without a manual reload.
+                if (!pageLeaving && !leavingSession) {
+                    clearTimeout(inputReconnectTimer);
+                    inputReconnectTimer = setTimeout(connectInput, inputReconnectDelayMs);
+                }
+            };
+            socket.onerror = () => {
+                if (inputSocket === socket) {
+                    hidUnavailableNotified = true;
+                    status('USB HID unavailable');
+                    window.showRemoteHint('USB HID unavailable', 2800, 'warning');
+                }
+            };
+            const surface = document.getElementById('screen');
+            if (!surface) return;
+            let lastX = 0;
+            let lastY = 0;
+            let hasPointer = false;
+            const activeTouches = new Map();
+            let primaryTouchId = null;
+            let primaryTouchMoved = false;
+            let lastTouchCenter = null;
+            let threeFingerStart = null;
+            let threeFingerTriggered = false;
+
+            const touchCenter = () => {
+                let x = 0;
+                let y = 0;
+                activeTouches.forEach(pointer => {
+                    x += pointer.x;
+                    y += pointer.y;
+                });
+                return { x: x / activeTouches.size, y: y / activeTouches.size };
+            };
+            if (inputControlsBound) return;
+            inputControlsBound = true;
+            surface.addEventListener('pointermove', event => {
+                if (event.pointerType === 'touch') {
+                    const pointer = activeTouches.get(event.pointerId);
+                    if (!pointer) return;
+                    pointer.x = event.clientX;
+                    pointer.y = event.clientY;
+                    event.preventDefault();
+
+                    if (activeTouches.size >= 3) {
+                        const center = touchCenter();
+                        if (threeFingerStart && !threeFingerTriggered) {
+                            const dx = center.x - threeFingerStart.x;
+                            const dy = center.y - threeFingerStart.y;
+                            if (Math.max(Math.abs(dx), Math.abs(dy)) >= 36) {
+                                sendThreeFingerGesture(dx, dy);
+                                threeFingerTriggered = true;
+                            }
+                        }
+                        lastTouchCenter = center;
+                        return;
+                    }
+
+                    if (activeTouches.size === 2) {
+                        const center = touchCenter();
+                        if (lastTouchCenter) {
+                            const dx = center.x - lastTouchCenter.x;
+                            const dy = center.y - lastTouchCenter.y;
+                            const horizontal = Math.max(-127, Math.min(127, Math.round(-dx / 10)));
+                            const vertical = Math.max(-127, Math.min(127, Math.round(-dy / 10)));
+                            if (horizontal || vertical) sendInput({ type: 'scroll', vertical, horizontal });
+                        }
+                        lastTouchCenter = center;
+                        return;
+                    }
+
+                    if (primaryTouchId !== event.pointerId) return;
+                    const x = Math.max(-127, Math.min(127, Math.round(event.clientX - lastX)));
+                    const y = Math.max(-127, Math.min(127, Math.round(event.clientY - lastY)));
+                    lastX += x;
+                    lastY += y;
+                    if (Math.abs(event.clientX - activeTouches.get(event.pointerId).startX) > 8 ||
+                        Math.abs(event.clientY - activeTouches.get(event.pointerId).startY) > 8) {
+                        primaryTouchMoved = true;
+                    }
+                    if (x || y) sendInput({ type: 'move', x, y });
+                    return;
+                }
+                if (!hasPointer) { lastX = event.clientX; lastY = event.clientY; hasPointer = true; return; }
+                const x = Math.max(-127, Math.min(127, Math.round(event.clientX - lastX)));
+                const y = Math.max(-127, Math.min(127, Math.round(event.clientY - lastY)));
+                lastX += x; lastY += y;
+                if (x || y) sendInput({ type: 'move', x, y });
+            });
+            surface.addEventListener('pointerleave', () => { lastX = 0; lastY = 0; hasPointer = false; });
+            surface.addEventListener('pointerdown', event => {
+                surface.setPointerCapture?.(event.pointerId);
+                if (event.pointerType === 'touch') {
+                    event.preventDefault();
+                    activeTouches.set(event.pointerId, {
+                        x: event.clientX,
+                        y: event.clientY,
+                        startX: event.clientX,
+                        startY: event.clientY
+                    });
+                    if (activeTouches.size === 1) {
+                        primaryTouchId = event.pointerId;
+                        primaryTouchMoved = false;
+                        lastX = event.clientX;
+                        lastY = event.clientY;
+                        hasPointer = true;
+                    } else if (activeTouches.size === 2) {
+                        primaryTouchMoved = true;
+                        lastTouchCenter = touchCenter();
+                    } else if (activeTouches.size === 3) {
+                        threeFingerStart = touchCenter();
+                        threeFingerTriggered = false;
+                    }
+                    return;
+                }
+                sendInput({ type: 'button', button: event.button, pressed: true });
+            });
+            surface.addEventListener('pointerup', event => {
+                if (event.pointerType === 'touch') {
+                    event.preventDefault();
+                    const isTap = activeTouches.size === 1 &&
+                        primaryTouchId === event.pointerId &&
+                        !primaryTouchMoved &&
+                        !threeFingerTriggered;
+                    activeTouches.delete(event.pointerId);
+                    lastTouchCenter = null;
+                    if (activeTouches.size < 3) {
+                        threeFingerStart = null;
+                        threeFingerTriggered = false;
+                    }
+                    surface.releasePointerCapture?.(event.pointerId);
+                    if (isTap) {
+                        sendInput({ type: 'button', button: 0, pressed: true });
+                        sendInput({ type: 'button', button: 0, pressed: false });
+                    }
+                    if (activeTouches.size === 0) {
+                        primaryTouchId = null;
+                        primaryTouchMoved = false;
+                        hasPointer = false;
+                    }
+                    return;
+                }
+                sendInput({ type: 'button', button: event.button, pressed: false });
+                surface.releasePointerCapture?.(event.pointerId);
+            });
+            surface.addEventListener('pointercancel', event => {
+                if (event.pointerType === 'touch') {
+                    activeTouches.delete(event.pointerId);
+                    lastTouchCenter = null;
+                    threeFingerStart = null;
+                    threeFingerTriggered = false;
+                    surface.releasePointerCapture?.(event.pointerId);
+                    if (activeTouches.size === 0) {
+                        primaryTouchId = null;
+                        primaryTouchMoved = false;
+                        hasPointer = false;
+                    }
+                    return;
+                }
+                sendInput({ type: 'button', button: event.button, pressed: false });
+                surface.releasePointerCapture?.(event.pointerId);
+            });
+            surface.addEventListener('wheel', event => {
+                event.preventDefault();
+                const vertical = Math.max(-127, Math.min(127, Math.round(event.deltaY / 40))) || (event.deltaY > 0 ? 1 : -1);
+                const horizontal = Math.max(-127, Math.min(127, Math.round(event.deltaX / 40))) || (event.deltaX > 0 ? 1 : -1);
+                sendInput({ type: 'scroll', vertical: event.deltaY ? vertical : 0, horizontal: event.deltaX ? horizontal : 0 });
+            }, { passive: false });
+            window.addEventListener('keydown', event => {
+                if (event.target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
+                if (event.repeat) return;
+                const key = hidKeys[event.code];
+                if (key === undefined) return;
+                event.preventDefault();
+                let modifiers = 0;
+                if (event.ctrlKey) modifiers |= 1;
+                if (event.shiftKey) modifiers |= 2;
+                if (event.altKey) modifiers |= 4;
+                if (event.metaKey) modifiers |= 8;
+                sendInput({ type: 'key', key, modifiers });
+            });
+            window.addEventListener('keyup', event => {
+                if (event.target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
+                if (hidKeys[event.code] !== undefined) sendInput({ type: 'release' });
+            });
+            window.addEventListener('blur', releaseInputState);
+            document.addEventListener('visibilitychange', () => { if (document.hidden) releaseInputState(); });
+        }
+
+        // When this function is called we have
+        // successfully connected to a server
+        function connectedToServer(e) {
+            if (this !== rfb) return;
+            rfbConnected = true;
+            rfbConnecting = false;
+            const stage = document.getElementById('loadingStage');
+            if (stage) stage.textContent = 'Connected. Waiting for desktop frame';
+            status("Connected, waiting for desktop");
+            window.showRemoteHint('VNC connected!', 2800, 'success');
+            reconnectAttempt = 0;
+            reconnecting = false;
+            hideAgentNotice();
+            document.getElementById('reconnectButton').style.display = 'inline-flex';
+        }
+
+        function firstFramebufferReceived(e) {
+            if (this !== rfb) return;
+            document.getElementById('frameLoading')?.classList.add('is-ready');
+            status('Desktop visible');
+        }
+
+        // This function is called when we are disconnected
+        function disconnectedFromServer(e) {
+            if (this !== rfb) return;
+            rfbConnected = false;
+            rfbConnecting = false;
+            if (pageLeaving) return;
+            showFrameLoading("Connection lost. Reconnecting...");
+            if (e.detail.clean) {
+                status("Disconnected");
+                window.showRemoteHint('VNC disconnected', 2800, 'warning');
+            } else {
+                status("Remote connection lost");
+                window.showRemoteHint('VNC connection lost', 2800, 'warning');
+            }
+            document.getElementById('reconnectButton').style.display = 'block';
+            if (!inputOnly && agentStateChecked && !agentOnline) {
+                // We already know the Agent is offline, so do not keep
+                // retrying a socket the firmware will keep rejecting.
+                showAgentNotice();
+                return;
+            }
+            scheduleReconnect();
+        }
+
+        function scheduleReconnect() {
+            if (pageLeaving) return;
+            if (reconnecting || reconnectAttempt >= 5) {
+                return;
+            }
+
+            if (!agentOnline && agentStateChecked && !inputOnly) {
+                // The Agent is not running on the connected PC. Retrying the
+                // socket would only fail, so stop and tell the user why.
+                reconnecting = false;
+                clearTimeout(reconnectTimer);
+                showAgentNotice();
+                return;
+            }
+
+            reconnecting = true;
+            const delay = Math.min(1000 * (2 ** reconnectAttempt), 16000);
+            reconnectAttempt += 1;
+            status(`Reconnecting in ${Math.ceil(delay / 1000)}s`);
+            window.showRemoteHint('Reconnecting to VNC');
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                reconnecting = false;
+                connectRemote();
+            }, delay);
+        }
+
+        // When this function is called, the server requires
+        // credentials to authenticate
+        function credentialsAreRequired(e) {
+            const password = prompt("Password Required:");
+            rfb.sendCredentials({ password: password });
+        }
+
+        // When this function is called we have received
+        // a desktop name from the server
+        function updateDesktopName(e) {
+            desktopName = e.detail.name;
+        }
+
+        // Since most operating systems will catch Ctrl+Alt+Del
+        // before they get a chance to be intercepted by the browser,
+        // we provide a way to emulate this key sequence.
+        function sendCtrlAltDel() {
+            if (!rfb) {
+                status('Remote connection unavailable');
+                return false;
+            }
+            rfb.sendCtrlAltDel();
+            return false;
+        }
+
+        function sendKey(keysym, code, modifiers = 0) {
+            const modifier = hidModifiers[code];
+            if (modifier !== undefined) {
+                const bit = (modifier & 0x0f) || (modifier >> 4);
+                latchedModifiers ^= bit;
+                syncModifierButtons();
+                return;
+            }
+            if (inputOnly) {
+                const key = hidKeys[code];
+                if (key !== undefined) {
+                    sendInput({ type: 'key', key, modifiers: modifiers | latchedModifiers });
+                    setTimeout(() => sendInput({ type: 'release' }), 30);
+                    latchedModifiers = 0;
+                    syncModifierButtons();
+                }
+                return;
+            }
+            if (rfb) {
+                const activeModifiers = modifiers | latchedModifiers;
+                const keys = [
+                    [1, 0xffe3, 'ControlLeft'],
+                    [2, 0xffe1, 'ShiftLeft'],
+                    [4, 0xffe9, 'AltLeft'],
+                    [8, 0xffeb, 'MetaLeft']
+                ].filter(([bit]) => activeModifiers & bit);
+                latchedModifiers = 0;
+                syncModifierButtons();
+                for (const [, modifierKeysym, modifierCode] of keys) rfb.sendKey(modifierKeysym, modifierCode, true);
+                rfb.sendKey(keysym, code, true);
+                rfb.sendKey(keysym, code, false);
+                for (const [, modifierKeysym, modifierCode] of keys.reverse()) rfb.sendKey(modifierKeysym, modifierCode, false);
+            }
+        }
+
+        function syncModifierButtons() {
+            for (const [id, bit] of [['ctrlButton', 1], ['altButton', 4]]) {
+                const button = document.getElementById(id);
+                if (!button) continue;
+                const active = (latchedModifiers & bit) !== 0;
+                button.classList.toggle('is-latched', active);
+                button.setAttribute('aria-pressed', String(active));
+            }
+        }
+
+        function openKeyboard() {
+            const input = document.getElementById('mobile_keyboard_input');
+            input.focus();
+            status('Keyboard ready');
+            window.showRemoteHint('Tap to type');
+        }
+
+        function handleMobileText(event) {
+            if (event.inputType === 'deleteContentBackward') {
+                sendKey(0xff08, 'Backspace');
+                event.target.value = '';
+                return;
+            }
+            if (event.inputType === 'deleteContentForward') {
+                sendKey(0xffff, 'Delete');
+                event.target.value = '';
+                return;
+            }
+            for (const character of event.data || '') {
+                const codePoint = character.codePointAt(0);
+                const key = mobileCharacterKey(character);
+                if (key) sendKey(codePoint, key.code, key.modifiers);
+            }
+            event.target.value = '';
+        }
+
+        function mobileCharacterKey(character) {
+            if (/^[a-z]$/i.test(character)) {
+                return { code: `Key${character.toUpperCase()}`, modifiers: character === character.toUpperCase() ? 2 : 0 };
+            }
+            if (/^[0-9]$/.test(character)) return { code: `Digit${character}`, modifiers: 0 };
+            const shifted = {
+                '!': ['Digit1', 2], '@': ['Digit2', 2], '#': ['Digit3', 2], '$': ['Digit4', 2], '%': ['Digit5', 2],
+                '^': ['Digit6', 2], '&': ['Digit7', 2], '*': ['Digit8', 2], '(': ['Digit9', 2], ')': ['Digit0', 2],
+                '_': ['Minus', 2], '+': ['Equal', 2], '?': ['Slash', 2], ':': ['Semicolon', 2], '"': ['Quote', 2],
+                '{': ['BracketLeft', 2], '}': ['BracketRight', 2], '|': ['Backslash', 2],
+                '<': ['Comma', 2], '>': ['Period', 2], '~': ['Backquote', 2]
+            };
+            if (shifted[character]) return { code: shifted[character][0], modifiers: shifted[character][1] };
+            const plain = {
+                ' ': 'Space', '-': 'Minus', '=': 'Equal', '[': 'BracketLeft', ']': 'BracketRight',
+                '\\': 'Backslash', ';': 'Semicolon', "'": 'Quote', '`': 'Backquote', ',': 'Comma', '.': 'Period', '/': 'Slash'
+            };
+            return plain[character] ? { code: plain[character], modifiers: 0 } : null;
+        }
+
+        function status(text) {
+            const statusElement = document.getElementById('status');
+            if (!statusElement) return;
+            statusElement.textContent = text;
+        }
+
+        function showFrameLoading(message) {
+            if (inputOnly) return;
+            document.getElementById('frameLoading')?.classList.remove('is-ready');
+            const stage = document.getElementById('loadingStage');
+            if (stage) stage.textContent = message;
+        }
+
+        // This function extracts the value of one variable from the
+        // query string. If the variable isn't defined in the URL
+        // it returns the default value instead.
+        function readQueryVariable(name, defaultValue) {
+            const queryParams = new URLSearchParams(window.location.search);
+            if (queryParams.has(name)) return queryParams.get(name);
+
+            // Hash parameters stay client-side, useful for password and mode
+            // flags. Support both #name=value and #?name=value forms.
+            const hashValue = window.location.hash.replace(/^#\??/, '');
+            const hashParams = new URLSearchParams(hashValue);
+            return hashParams.has(name) ? hashParams.get(name) : defaultValue;
+        }
+
+        function readQueryBoolean(name, defaultValue) {
+            const value = readQueryVariable(name);
+            return value === undefined || value === null ? defaultValue : value === 'true';
+        }
+
+        function bindControls() {
+            const get = id => document.getElementById(id);
+            get('hideControlsButton').onclick = () => setControlsVisible(false);
+            get('showControlsButton').onclick = () => setControlsVisible(true);
+            const cadButton = get('sendCtrlAltDelButton');
+            if (cadButton) cadButton.onclick = sendCtrlAltDel;
+            get('loadingRetry').onclick = () => window.location.reload();
+            get('exitConfirm').onclick = exitRemoteSession;
+            get('keyboardButton').onclick = openKeyboard;
+            document.getElementById('lockButton').onclick = toggleInputLock;
+            get('copyButton').onclick = () => inputOnly ? sendShortcut('KeyC', 1) : sendKey(0x63, 'KeyC', 1);
+            get('pasteButton').onclick = () => inputOnly ? sendShortcut('KeyV', 1) : sendKey(0x76, 'KeyV', 1);
+            get('reconnectButton').onclick = () => {
+                reconnectAttempt = 0;
+                reconnecting = false;
+                clearTimeout(reconnectTimer);
+                connectRemote();
+            };
+            get('enterButton').onclick = () => sendKey(0xff0d, 'Enter');
+            get('escapeButton').onclick = () => sendKey(0xff1b, 'Escape');
+            get('tabButton').onclick = () => sendKey(0xff09, 'Tab');
+            get('backspaceButton').onclick = () => sendKey(0xff08, 'Backspace');
+            get('ctrlButton').onclick = () => sendKey(0xffe3, 'ControlLeft');
+            get('altButton').onclick = () => sendKey(0xffe9, 'AltLeft');
+            get('leftClickButton').onclick = () => inputOnly ? (sendInput({ type: 'button', button: 0, pressed: true }), sendInput({ type: 'button', button: 0, pressed: false })) : rfb.sendMouseButton(0);
+            get('rightClickButton').onclick = () => inputOnly ? (sendInput({ type: 'button', button: 2, pressed: true }), sendInput({ type: 'button', button: 2, pressed: false })) : rfb.sendMouseButton(2);
+            get('middleClickButton').onclick = () => inputOnly ? (sendInput({ type: 'button', button: 1, pressed: true }), sendInput({ type: 'button', button: 1, pressed: false })) : rfb.sendMouseButton(1);
+            get('scrollUpButton').onclick = () => inputOnly ? sendInput({ type: 'scroll', vertical: -1 }) : rfb.sendMouseWheel(-1);
+            get('scrollDownButton').onclick = () => inputOnly ? sendInput({ type: 'scroll', vertical: 1 }) : rfb.sendMouseWheel(1);
+            get('mobile_keyboard_input').addEventListener('input', handleMobileText);
+        }
+
+        function setControlsVisible(visible) {
+            document.body.classList.toggle('chrome-hidden', !visible);
+            for (const id of ['top_bar', 'remote_controls']) {
+                const section = document.getElementById(id);
+                section.inert = !visible;
+                section.setAttribute('aria-hidden', String(!visible));
+            }
+            document.getElementById('hideControlsButton').setAttribute('aria-expanded', String(visible));
+            document.getElementById('showControlsButton').setAttribute('aria-expanded', String(visible));
+            document.getElementById(visible ? 'hideControlsButton' : 'showControlsButton').focus();
+        }
+
+        function exitRemoteSession(event) {
+            event.preventDefault();
+            if (leavingSession) return;
+            leavingSession = true;
+            pageLeaving = true;
+            clearTimeout(reconnectTimer);
+            clearTimeout(inputReconnectTimer);
+            clearInterval(agentPollTimer);
+            releaseInputState();
+            if (inputSocket && inputSocket.readyState < WebSocket.CLOSING) {
+                inputSocket.close(1000, 'Leaving remote session');
+            }
+
+            const navigate = () => window.location.assign('/');
+            if (rfb && (rfbConnected || rfbConnecting)) {
+                const session = rfb;
+                rfbConnected = false;
+                rfbConnecting = false;
+                session.addEventListener('disconnect', navigate, { once: true });
+                session.disconnect();
+                setTimeout(navigate, 750);
+            } else {
+                navigate();
+            }
+        }
+
+        // Read parameters specified in the URL query string
+        // By default, use the host and port of server that served this file
+        const host = readQueryVariable('host', window.location.hostname);
+        let port = readQueryVariable('port', window.location.port);
+        const password = readQueryVariable('password');
+        const path = readQueryVariable('path', 'websockify');
+
+        // | | |         | | |
+        // | | | Connect | | |
+        // v v v         v v v
+
+        // Build the websocket URL used to connect
+        let url;
+        if (window.location.protocol === "https:") {
+            url = 'wss';
+        } else {
+            url = 'ws';
+        }
+        url += '://' + host;
+        if(port) {
+            url += ':' + port;
+        }
+        url += '/' + path;
+
+        function connectRemote() {
+            if (inputOnly) {
+                connectInput();
+                return;
+            }
+            if (rfb && (rfbConnected || rfbConnecting)) rfb.disconnect();
+            rfbConnected = false;
+            window.showRemoteHint('Connecting to VNC');
+            reconnecting = true;
+            rfbConnecting = true;
+            showFrameLoading('Connecting to host Agent');
+
+        if (!inputOnly) {
+            status("Checking host Agent");
+        } else {
+            status("Connecting");
+        }
+            rfb = new RFB(document.getElementById('screen'), url,
+                          { credentials: { password: password } });
+            rfb.addEventListener("connect", connectedToServer);
+            rfb.addEventListener("frame", firstFramebufferReceived);
+            rfb.addEventListener("disconnect", disconnectedFromServer);
+            rfb.addEventListener("credentialsrequired", credentialsAreRequired);
+            rfb.addEventListener("desktopname", updateDesktopName);
+            rfb.viewOnly = readQueryBoolean('view_only', false);
+            rfb.scaleViewport = readQueryBoolean('scale', true);
+            rfb.qualityLevel = 8;
+            reconnecting = false;
+        }
+
+        // ---- Agent state awareness -------------------------------------
+        // VNC screen streaming only works while the Agent process is running
+        // on the PC connected by USB. Rather than retrying a socket that the
+        // firmware will keep rejecting, poll the dashboard status and show an
+        // honest explanation until the Agent is actually available.
+
+        let agentPollTimer;
+
+        function showAgentNotice() {
+            const notice = document.getElementById('agentNotice');
+            if (notice) {
+                notice.hidden = false;
+                notice.classList.add('show');
+            }
+            const reconnectButton = document.getElementById('reconnectButton');
+            if (reconnectButton) reconnectButton.style.display = 'none';
+        }
+
+        function hideAgentNotice() {
+            const notice = document.getElementById('agentNotice');
+            if (notice) {
+                notice.hidden = true;
+                notice.classList.remove('show');
+            }
+        }
+
+        function updateAgentConnected(online) {
+            const wasOnline = agentOnline;
+            agentOnline = online === true;
+            agentStateChecked = true;
+            if (!inputOnly) {
+                if (agentOnline) {
+                    hideAgentNotice();
+                } else if (!rfbConnected) {
+                    clearTimeout(reconnectTimer);
+                    reconnecting = false;
+                    status("Agent offline - start it on the host");
+                    window.showRemoteHint('Host Agent is offline', 3500, 'warning');
+                    showAgentNotice();
+                }
+            }
+            if (!pageLeaving && agentOnline && !wasOnline && !rfbConnected && !rfbConnecting && !inputOnly) {
+                reconnectAttempt = 0;
+                reconnecting = false;
+                clearTimeout(reconnectTimer);
+                connectRemote();
+            }
+        }
+
+        function pollAgentStatus() {
+            fetch('/data.json', { cache: 'no-store' })
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(d => updateAgentConnected(d && d.agentConnected === true))
+                .catch(() => {
+                    // Transient request failure: keep the last known state and
+                    // retry on the next poll.
+                });
+        }
+
+        function initializeRemote() {
+            if (redirectCaptiveAlias()) return;
+            if (inputOnly) {
+                document.documentElement.classList.add('input-only');
+                document.body.classList.add('input-only');
+                document.title = 'RedLilyGO Input Only';
+            }
+            bindControls();
+            status('Connecting');
+            if (!inputOnly) {
+                agentPollTimer = setInterval(pollAgentStatus, 3000);
+                pollAgentStatus();
+                // Fallback: if status polling cannot reach /data.json at all,
+                // fall back to a direct connection attempt.
+                reconnectTimer = setTimeout(() => {
+                    if (!agentStateChecked && !rfbConnected && !rfbConnecting) connectRemote();
+                }, 4000);
+            } else {
+                connectRemote();
+            }
+        }
+
+        window.addEventListener('pagehide', () => {
+            pageLeaving = true;
+            clearTimeout(reconnectTimer);
+            clearTimeout(inputReconnectTimer);
+            clearInterval(agentPollTimer);
+            releaseInputState();
+            if (rfb && (rfbConnected || rfbConnecting)) rfb.disconnect();
+            if (inputSocket && inputSocket.readyState < WebSocket.CLOSING) {
+                inputSocket.close(1000, 'Page leaving');
+            }
+        });
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) window.location.reload();
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeRemote, { once: true });
+        } else {
+            initializeRemote();
+        }
+    </script>
+</head>
+
+<body>
+    <div id="top_bar">
+        <div class="header-left" style="display:flex; align-items:center; gap:10px;">
+            <button class="remote_button" onclick="showExitModal()" type="button" aria-label="Exit" title="Exit to Main App">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+            </button>
+        </div>
+        <div id="status">Starting</div>
+        <div class="header-right">
+            <button class="remote_button" id="reconnectButton" type="button" aria-label="Reconnect" title="Reconnect">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button class="remote_button" id="hideControlsButton" type="button" aria-label="Hide controls" aria-controls="top_bar remote_controls" aria-expanded="true" title="Hide controls">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.7 10.7 0 0 1 12 5c7 0 10 7 10 7a17 17 0 0 1-3.1 4.1M6.5 6.5A17 17 0 0 0 2 12s3 7 10 7a10.7 10.7 0 0 0 5.5-1.5"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="hint" role="status" aria-live="polite" aria-hidden="true"></div>
+    <button class="remote_button" id="showControlsButton" type="button" aria-label="Show controls" aria-controls="top_bar remote_controls" aria-expanded="true" title="Show controls">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <div id="workspace">
+    <div id="screen">
+        <div id="input_only_surface" aria-hidden="true">
+            <div class="trackpad-indicator" aria-hidden="true"></div>
+        </div>
+        <div id="frameLoading" role="status" aria-live="polite">
+            <div class="loading-monitor" aria-hidden="true"></div>
+            <strong>Loading desktop</strong>
+            <span class="loading-stage" id="loadingStage">Checking host Agent</span>
+            <div class="loading-track" aria-hidden="true"></div>
+            <button class="remote_button" id="loadingRetry" type="button">Retry connection</button>
+        </div>
+        <div id="agentNotice" role="alert" aria-live="polite" hidden>
+            <svg class="icon notice-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+            </svg>
+            <h2 id="agentNoticeTitle">Host Agent offline</h2>
+            <p id="agentNoticeBody">The Agent on the connected PC is not running, so the host screen cannot be streamed.</p>
+            <div>
+                <span class="notice-cmd">.\tools\start-agent.ps1</span>
+            </div>
+            <p class="notice-sub">Run the Agent on the PC that is connected by USB, then this page reconnects automatically.</p>
+        </div>
+    </div>
+    </div>
+
+    <div id="remote_controls">
+        <div class="control-group">
+            <button class="remote_button primary-btn" id="keyboardButton" type="button" title="Keyboard">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M7 9h.01M12 9h.01M17 9h.01M7 13h.01M12 13h.01M17 13h.01M9 17h6"/></svg>
+                <span class="btn-lbl">KBD</span>
+            </button>
+        </div>
+        <div class="control-group">
+            <button class="remote_button" id="enterButton" type="button" title="Enter">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M9 9l-4 4 4 4M20 4v9H5"/></svg>
+                <span class="btn-lbl">ENT</span>
+            </button>
+            <button class="remote_button" id="escapeButton" type="button" title="Escape">
+                <svg class="icon text-icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10.5" fill="currentColor" stroke="none">ESC</text></svg>
+                <span class="btn-lbl">ESC</span>
+            </button>
+            <button class="remote_button" id="tabButton" type="button" title="Tab">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M17 8l4 4-4 4M3 12h18M3 5v14"/></svg>
+                <span class="btn-lbl">TAB</span>
+            </button>
+            <button class="remote_button" id="backspaceButton" type="button" title="Backspace">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="M18 9l-6 6M12 9l6 6"/></svg>
+                <span class="btn-lbl">BSP</span>
+            </button>
+        </div>
+        <div class="control-group">
+            <button class="remote_button compact" id="ctrlButton" type="button" title="Ctrl">
+                <svg class="icon text-icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10.5" fill="currentColor" stroke="none">CTRL</text></svg>
+                <span class="btn-lbl">CTRL</span>
+            </button>
+            <button class="remote_button compact" id="altButton" type="button" title="Alt">
+                <svg class="icon text-icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10.5" fill="currentColor" stroke="none">ALT</text></svg>
+                <span class="btn-lbl">ALT</span>
+            </button>
+            <button class="remote_button compact" id="sendCtrlAltDelButton" type="button" title="Ctrl+Alt+Del">
+                <svg class="icon text-icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10.5" fill="currentColor" stroke="none">CAD</text></svg>
+                <span class="btn-lbl">CAD</span>
+            </button>
+        </div>
+        <div class="control-group">
+            <button class="remote_button compact" id="copyButton" type="button" title="Ctrl+C"><svg class="icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="12" font-weight="bold" fill="currentColor" stroke="none">C</text></svg><span class="btn-lbl">C</span></button>
+            <button class="remote_button compact" id="pasteButton" type="button" title="Ctrl+V"><svg class="icon" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="12" font-weight="bold" fill="currentColor" stroke="none">V</text></svg><span class="btn-lbl">V</span></button>
+            <button class="remote_button compact input-only-control" id="lockButton" type="button" aria-pressed="false" aria-label="Lock HID input" title="Lock HID input">
+                <svg class="icon lock-icon" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <svg class="icon unlock-icon" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-1.9"/></svg>
+            </button>
+        </div>
+        <div class="control-group">
+            <button class="remote_button compact" id="leftClickButton" type="button" aria-label="Left click" title="Left Click">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="7"/><path d="M5 9h14M12 2v7"/><path d="M5 9V9c0-3.866 3.134-7 7-7v7H5z" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button class="remote_button compact" id="rightClickButton" type="button" aria-label="Right click" title="Right Click">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="7"/><path d="M5 9h14M12 2v7"/><path d="M12 9V2c3.866 0 7 3.134 7 7h-7z" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button class="remote_button compact" id="middleClickButton" type="button" aria-label="Middle click" title="Middle Click">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="7"/><path d="M5 9h14M12 2v7"/><rect x="10" y="2" width="4" height="7" fill="currentColor" stroke="none"/></svg>
+            </button>
+        </div>
+        <div class="control-group" style="border-right: none;">
+            <button class="remote_button compact" id="scrollUpButton" type="button" aria-label="Scroll up" title="Scroll Up">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 18V6M12 6l-4 4M12 6l4 4"/></svg>
+            </button>
+            <button class="remote_button compact" id="scrollDownButton" type="button" aria-label="Scroll down" title="Scroll Down">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M12 18l-4-4M12 18l4-4"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <input id="mobile_keyboard_input" type="text" inputmode="text" autocomplete="off" aria-label="Remote keyboard input">
+
+    <div id="exitOverlay">
+        <div class="exit-modal">
+            <div style="font-size: 15px; font-weight: 700; color: white;">Exit Session?</div>
+            <div style="font-size: 11px; color: #a1a1aa; margin-top: 4px; line-height: 1.4; text-align: center;">Are you sure you want to disconnect?</div>
+            <div class="hint-btn-row">
+                <button type="button" class="hint-btn cancel" onclick="closeExitModal(event)">Cancel</button>
+                <a id="exitConfirm" href="/" class="hint-btn confirm" style="display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;">Exit</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

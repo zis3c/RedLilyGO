@@ -1,0 +1,40 @@
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-60 bg-zinc-900 border-r border-zinc-800 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-200 overflow-x-hidden">
+    <div class="h-14 flex items-center px-5 border-b border-zinc-800 shrink-0">
+      <span class="text-white font-bold text-[16px] tracking-tight flex items-center sidebar-logo-text">
+        LilyG<span class="sidebar-logo-dot" aria-hidden="true"></span>
+      </span>
+      <button data-action="toggle-sidebar" aria-label="Toggle sidebar" class="desktop-toggle-btn hidden md:flex ml-auto text-zinc-400 hover:text-white items-center justify-center w-7 h-7 relative -mr-1">
+        <i class="fa-solid fa-chevron-left text-[11px]" id="sidebarToggleIcon"></i>
+        <i class="fa-solid fa-circle text-red-500 text-[12px] flex items-center justify-center m-auto" id="sidebarDotIcon"></i>
+      </button>
+      <button data-action="close-sidebar" aria-label="Close navigation menu" class="ml-auto md:hidden text-zinc-400 hover:text-white flex items-center justify-center w-7 h-7 -mr-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 text-[13px]">
+      <a href="#" data-tab="tab-1" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-gauge w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Dashboard</span>
+      </a>
+
+      <div class="pt-4 pb-2 px-3 sidebar-category"><span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Workspace</span></div>
+      <a href="#" data-tab="tab-3" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-wrench w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Marauder</span>
+      </a>
+      <a href="#" data-tab="tab-8" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-display w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Remote</span>
+      </a>
+      <div class="pt-4 pb-2 px-3 sidebar-category"><span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">System</span></div>
+      <a href="#" data-tab="tab-4" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-folder w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Files</span>
+      </a>
+      <a href="#" data-tab="tab-6" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-terminal w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Logs</span>
+      </a>
+      <a href="#" data-tab="tab-2" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-gear w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Settings</span>
+      </a>
+      <a href="#" data-tab="tab-7" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-circle-info w-4 text-center text-[13px] shrink-0"></i><span class="nav-text">Help</span>
+      </a>
+    </nav>
+
+  </aside>

@@ -1,0 +1,12 @@
+REM RedLilyGO - USB Ethernet (NCM) setup. Presents /cdrom.iso then switches to NCM. Start the board in Serial mode. Authorized testing only.
+DEFINE #SETTING_NAME usbDeviceType
+VAR $SETTING_USB_DEVICE_TYPE_ETHERNET = 2
+IF (GET_SETTING_VALUE() != $SETTING_USB_DEVICE_TYPE_ETHERNET) THEN
+    USB_MOUNT_CDROM_READ_ONLY /cdrom.iso
+    WHILE (AGENT_CONNECTED() == FALSE)
+        DELAY 2000
+    END_WHILE
+    SET_SETTING_UINT16 usbDeviceType $SETTING_USB_DEVICE_TYPE_ETHERNET
+    RESET
+ELSE
+END_IF

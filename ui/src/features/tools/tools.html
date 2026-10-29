@@ -1,0 +1,115 @@
+                <!-- Payload tools and Marauder controls. -->
+                <div id="tab-3" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center justify-between">
+                            <div class="flex items-center gap-2"><i class="fa-solid fa-wrench text-zinc-500 text-[11px] mt-[1.5px]"></i> Marauder</div>
+                        </div>
+                        <div class="p-5 space-y-5">
+                            <form action="/marauder" method="post" id="marauderForm">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Select Marauder command</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <div class="flex-1">
+                                        <select class="cdrop-select" id="marauderCmd" name="marauderCmd">
+                                            <optgroup label="WiFi Attack">
+                                                <option value="attack -t deauth">Deauth target selected APs</option>
+                                                <option value="attack -t deauth -c">Deauth APs + connected stations</option>
+                                                <option value="attack -t beacon -l">Beacon spam listed SSIDs</option>
+                                                <option value="attack -t beacon -r">Beacon spam random SSIDs</option>
+                                                <option value="attack -t beacon -a">Beacon spam fake AP copies</option>
+                                                <option value="attack -t probe">Probe request flood</option>
+                                                <option value="attack -t rickroll">Rickroll beacon spam</option>
+                                            </optgroup>
+                                            <optgroup label="WiFi Scan / Sniff">
+                                                <option value="scanap">Scan nearby access points</option>
+                                                <option value="scansta">Scan stations / clients</option>
+                                                <option value="sniffraw">WiFi packet capture (PCAP)</option>
+                                                <option value="sniffbeacon">Sniff beacon frames</option>
+                                                <option value="sniffprobe">Sniff probe requests</option>
+                                                <option value="sniffdeauth">Sniff deauth frames</option>
+                                                <option value="sniffpmkid">Capture WPA handshakes (PMKID)</option>
+                                                <option value="sniffpwn">Sniff Pwnagotchi beacons</option>
+                                                <option value="sniffesp">Sniff ESP-Marauder packets</option>
+                                                <option value="sigmon">Monitor signal strength</option>
+                                            </optgroup>
+                                            <optgroup label="WiFi Target / List">
+                                                <option value="list -a">List access points</option>
+                                                <option value="list -s">List SSIDs</option>
+                                                <option value="list -c">List stations / clients</option>
+                                                <option value="select -a 0">Select AP by index</option>
+                                                <option value="select -s 0">Select SSID by index</option>
+                                                <option value="select -c 0">Select station by index</option>
+                                                <option value="clearlist -a">Clear AP list</option>
+                                                <option value="ssid -a -g 30">Generate 30 SSIDs for beacon list</option>
+                                                <option value="ssid -r 0">Remove SSID by index</option>
+                                                <option value="save -a">Save AP list to SD</option>
+                                                <option value="load -a">Load AP list from SD</option>
+                                                <option value="channel">Get current WiFi channel</option>
+                                            </optgroup>
+                                            <optgroup label="Bluetooth">
+                                                <option value="blespam -t all">BLE spam all devices</option>
+                                                <option value="blespam -t apple">BLE spam Apple</option>
+                                                <option value="blespam -t google">BLE spam Google</option>
+                                                <option value="blespam -t samsung">BLE spam Samsung</option>
+                                                <option value="blespam -t windows">BLE spam Windows</option>
+                                                <option value="sniffbt">Sniff Bluetooth traffic</option>
+                                                <option value="sniffskim">Detect card skimmers</option>
+                                            </optgroup>
+                                            <optgroup label="Evil Portal">
+                                                <option value="evilportal -c start">Start Evil Portal captive portal</option>
+                                            </optgroup>
+                                            <optgroup label="System">
+                                                <option value="help">Show all commands</option>
+                                                <option value="settings">View / change settings</option>
+                                                <option value="ls /">List SD files</option>
+                                                <option value="reboot">Reboot device</option>
+                                            </optgroup>
+                                            <optgroup label="Control">
+                                                <option value="stopscan">Stop active scan/attack</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+                                </div>
+                            </form>
+                            <div id="marauderPortalTemplate" class="text-[11px] text-zinc-500 mt-2">Portal template: none selected</div>
+
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="marauderMiniLog"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-robot text-zinc-500 text-[11px] mt-[1.5px]"></i> Agent Command</div>
+                        <div class="p-5">
+                            <form action="/runagentcmd" method="post">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">OS command (agent must be installed)</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative" id="agentAutocompleteWrapper">
+                                    <input id="agentCommandInput" autocomplete="off" class="flex-1 bg-zinc-950 border border-transparent rounded-lg px-4 h-[36px] text-[13px] text-white font-mono placeholder:text-zinc-400 focus:border-red-500 outline-none" type="text" name="rawCommand" placeholder="dir *.txt">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+                                    <div id="agentAutocompleteDropdown" class="absolute top-full left-0 mt-1 w-full sm:w-[calc(100%-80px)] bg-zinc-800 border border-transparent rounded-lg shadow-none overflow-hidden z-50 hidden flex-col" style="max-height: 340px; overflow-y: auto;"></div>
+                                </div>
+                            </form>
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="agentMiniLog"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-code text-zinc-500 text-[11px] mt-[1.5px]"></i> Raw Input</div>
+                        <div class="p-5">
+                            <form action="/rawinput" method="post">
+                                <label class="text-[13px] text-zinc-400 font-medium block mb-2">Execute raw command</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative" id="autocompleteWrapper">
+                                    <input id="rawCommandInput" autocomplete="off" class="flex-1 bg-zinc-950 border border-transparent rounded-lg px-4 h-[36px] text-[13px] text-white font-mono placeholder:text-zinc-400 focus:border-red-500 outline-none" type="text" name="rawCommand" placeholder="command...">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold text-[13px] px-4 h-[36px] rounded-lg transition-colors shrink-0 flex items-center justify-center">Execute</button>
+
+                                    <!-- Command suggestions shown while typing. -->
+                                    <div id="autocompleteDropdown" class="absolute top-full left-0 mt-1 w-full sm:w-[calc(100%-80px)] bg-zinc-800 border border-transparent rounded-lg shadow-none overflow-hidden z-50 hidden flex-col" style="max-height: 340px; overflow-y: auto;">
+                                        <!-- JavaScript inserts matching suggestions here. -->
+                                    </div>
+                                </div>
+                            </form>
+                            <div class="mt-3 bg-zinc-950 border border-zinc-800 p-3 rounded-lg hidden font-mono text-[11px] text-zinc-400 whitespace-pre-wrap overflow-x-auto overflow-y-auto max-h-40" id="rawMiniLog"></div>
+                        </div>
+                    </div>
+
+                </div>
+

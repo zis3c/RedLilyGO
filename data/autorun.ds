@@ -1,0 +1,22 @@
+REM RedLilyGO - Autorun system test (M5-Atom-S3 class). Needs the Windows Agent running. Authorized testing only.
+WHILE (AGENT_CONNECTED() == FALSE)
+  DELAY 2000
+END_WHILE
+AGENT_RUN dir
+WAIT_FOR_AGENT_RUN_RESULT
+GUI
+DELAY 1000
+STRING https://github.com/zis3c/RedLilyGO/blob/main/docs/images/interface-status.png
+ENTER
+LED_R
+WAIT_FOR_BUTTON_PRESS
+LED_G
+WAIT_FOR_BUTTON_PRESS
+LED_B
+WAIT_FOR_BUTTON_PRESS
+LED_OFF
+WIFI_OFF
+ESP32M attack -t rickroll
+WAIT_FOR_BUTTON_PRESS
+DELAY 5000
+RESET

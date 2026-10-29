@@ -1,0 +1,74 @@
+                <!-- File manager page. -->
+                <div id="tab-4" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-folder-open text-zinc-500 text-[11px] mt-[1.5px]"></i> File Browser</div>
+                        <div class="p-5 space-y-5">
+                            <div id="tree" class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 min-h-[180px] max-h-[350px] overflow-auto text-[13px] sm:text-sm font-mono text-zinc-400">Loading files...</div>
+                            <div class="file-upload-panel relative bg-zinc-900/50 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
+                                <form action="/" method="get" class="m-0">
+                                    <div class="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="flex-1 flex flex-col justify-center min-w-0">
+                                            <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">Selected file</span>
+                                            <input class="w-full bg-transparent text-[12px] sm:text-[13px] text-zinc-300 font-mono outline-none cursor-default truncate" type="text" id="fileSelectionBox" readonly="" name="filename" placeholder="No file selected">
+                                        </div>
+                                        <div class="flex gap-2 shrink-0">
+                                            <button type="button" id="fileRunButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Run DuckyScript"><i class="fa-solid fa-play"></i></button>
+                                            <button type="button" id="fileEditButton" onclick="window.previewSelectedFile()" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Preview"><i class="fa-solid fa-file-lines"></i></button>
+                                            <button type="button" id="filePortalButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-orange-600 hover:bg-orange-500 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" disabled="true" title="Use as Portal Template"><i class="fa-solid fa-door-open"></i></button>
+                                            <button type="submit" id="fileDownloadButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" formaction="/download" formmethod="get" disabled="" title="Download"><i class="fa-solid fa-download"></i></button>
+                                            <button type="button" id="fileDeleteButton" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-red-300 disabled:cursor-not-allowed disabled:opacity-40 transition-colors font-semibold text-[11px]" onclick="window.deleteSelectedFile()" disabled="" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <div class="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/40">
+                                    <div class="flex-1 flex flex-col justify-center min-w-0">
+                                        <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">Upload to SD</span>
+                                        <span class="text-[12px] sm:text-[13px] text-zinc-400 font-mono truncate">Choose destination before upload</span>
+                                    </div>
+                                    <div class="file-upload-controls flex items-center gap-2 shrink-0 min-w-0">
+                                        <select id="fileUploadDirectory" class="cdrop-select" title="Upload destination">
+                                            <option value="Auto">Auto folder</option>
+                                        </select>
+                                        <input id="fileInputBox" type="file" class="hidden" onchange="document.getElementById('fileInputText').textContent = this.files.length ? this.files[0].name : 'Choose file'">
+                                        <label for="fileInputBox" class="cursor-pointer inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[12px] font-mono transition-all truncate max-w-[180px] sm:max-w-[220px]">
+                                            <i class="fa-solid fa-paperclip text-zinc-400 text-[11px] shrink-0"></i>
+                                            <span id="fileInputText" class="truncate">Choose file</span>
+                                        </label>
+                                        <button type="button" onclick="window.uploadFile()" class="w-8 h-8 flex items-center justify-center p-0 rounded-lg bg-red-900/40 hover:bg-red-900/60 text-red-300 transition-colors text-[12px] shrink-0" title="Upload File">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="fileUploadProgressBar" class="absolute bottom-0 inset-x-0 h-1 bg-zinc-800 overflow-hidden opacity-0 transition-opacity"><div class="h-full w-0 bg-red-500 transition-all"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="filePreviewModal" class="file-preview-modal fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4" style="display:none" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="filePreviewTitle">
+                    <div class="file-preview-panel bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden">
+                        <div class="file-preview-header px-4 py-3 sm:px-5 sm:py-4 border-b border-zinc-800 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <div id="filePreviewModeLabel" class="file-preview-kicker">FILE PREVIEW</div>
+                                <div class="file-preview-title-row">
+                                    <h3 id="filePreviewTitle" class="text-sm font-semibold text-zinc-100 truncate">File preview</h3>
+                                    <div class="file-preview-menu">
+                                        <button type="button" id="filePreviewMenuButton" class="file-preview-menu-button" onclick="window.togglePreviewActions(event)" aria-label="File actions" aria-expanded="false" aria-controls="filePreviewActions"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                        <div id="filePreviewActions" class="file-preview-actions" aria-hidden="true">
+                                            <button type="button" id="filePreviewEditButton" onclick="window.editPreviewFile()" class="file-preview-action" title="Edit file"><i class="fa-solid fa-pen"></i><span>Edit</span></button>
+                                            <button type="button" id="filePreviewSaveButton" onclick="window.savePreviewFile()" class="file-preview-action file-preview-save hidden" title="Save file"><i class="fa-solid fa-floppy-disk"></i><span>Save</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="file-preview-header-tools">
+                                <button type="button" onclick="window.closeFilePreview()" class="file-preview-close w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg" aria-label="Close preview"><i class="fa-solid fa-xmark text-xs"></i></button>
+                            </div>
+                        </div>
+                        <pre id="filePreviewContent" class="file-preview-content p-4 sm:p-5 overflow-auto flex-1 bg-zinc-950 text-emerald-300/90 text-xs font-mono whitespace-pre overflow-x-auto"><span class="file-preview-line"><span class="file-preview-line-number">1</span><span class="file-preview-line-text">Loading...</span></span></pre>
+                        <div id="filePreviewEditorShell" class="file-preview-editor-shell hidden">
+                            <div id="filePreviewEditorLines" class="file-preview-editor-lines" aria-hidden="true">1</div>
+                            <textarea id="filePreviewEditor" class="file-preview-editor" spellcheck="false" aria-label="Edit file content"></textarea>
+                        </div>
+                    </div>
+                </div>

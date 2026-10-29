@@ -1,0 +1,13 @@
+# RedLilyGO 8 MB partition table.
+#
+# Firmware updates are USB-flashing only (no OTA), so the second OTA app slot
+# in default_8MB.csv is unused. This table merges both slots into one large
+# factory app to keep well under the flash limit, while reserving NVS for
+# settings, a SPIFFS area for Marauder's no-SD fallback, and a coredump slot.
+#
+# Name,   Type, SubType,  Offset,   Size,     Flags
+nvs,      data, nvs,      0x9000,   0x5000,
+otadata,  data, ota,      0xe000,   0x2000,
+app0,     app,  factory,  0x10000,  0x600000,
+spiffs,   data, spiffs,   0x610000, 0x1E0000,
+coredump, data, coredump, 0x7F0000, 0x10000,

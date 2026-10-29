@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability reporting
+    url: https://github.com/zis3c/RedLilyGO/security/policy
+    about: Follow the security policy; do not post vulnerability details in public bug reports.

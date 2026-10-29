@@ -1,0 +1,271 @@
+name: Static analysis
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '.github/**'
+  pull_request:
+    branches: [ "main" ]
+  # The expensive analyses (CodeQL, clang-tidy) only run weekly or on demand
+  # instead of on every push, to stay inside the free private-repo Actions
+  # minutes. Trigger manually with "Run workflow" when a change needs them.
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # gitleaks lists the PR's commits over the API on pull_request events; without
+  # this the read-only token on Dependabot PRs returns 403.
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cppcheck:
+    name: C/C++ (cppcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Run cppcheck on firmware sources
+        run: |
+          cppcheck --enable=warning --inline-suppr --error-exitcode=1 \
+            --suppress=missingIncludeSystem --suppress=missingInclude \
+            --suppress=unusedFunction --suppress=unknownMacro \
+            -DLILYGO_T_DONGLE_S3 -DARDUINO_ARCH_ESP32S3 -DHAS_SD -DUSE_SD_MMC_INTERFACE \
+            -DNO_MIC -DNO_TOUCH -DNO_IR \
+            -I src src
+
+  workflows:
+    name: Workflows (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: raven-actions/actionlint@v2
+        with:
+          shellcheck: false
+
+  python:
+    name: Python (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: pip install ruff
+      - run: ruff check tests tools scripts
+
+  powershell:
+    name: PowerShell (PSScriptAnalyzer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run PSScriptAnalyzer on tools
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $issues = Invoke-ScriptAnalyzer -Path tools -Recurse -Severity Error,Warning `
+            -ExcludeRule PSAvoidUsingWriteHost,PSAvoidUsingAllowUnencryptedAuthentication
+          $issues | Format-Table -AutoSize
+          if ($issues) { throw "PSScriptAnalyzer found $($issues.Count) issue(s)." }
+
+  javascript:
+    name: JavaScript (eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install UI dependencies
+        working-directory: ui
+        run: npm ci
+      - name: Lint the generated UI bundle
+        working-directory: ui
+        run: npm run lint
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v7
+      # The device is documented to serve plain ws:// and HTTP Basic auth on a
+      # trusted local network, so those two rules are expected here.
+      - name: Run Semgrep
+        run: |
+          semgrep scan --config auto --error --severity ERROR \
+            --exclude-rule javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket \
+            --exclude-rule yaml.openapi.security.use-of-basic-authentication.use-of-basic-authentication \
+            --exclude node_modules --exclude .pio --exclude dist \
+            --exclude ui/vnc/vendor --exclude ui/content/assets/vendor \
+            --exclude '*.min.js'
+
+  markdown:
+    name: Markdown (markdownlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DavidAnson/markdownlint-cli2-action@v24
+        with:
+          config: .markdownlint.json
+          globs: '**/*.md'
+
+  links:
+    name: Docs links (lychee)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Offline mode validates local file and image links without network calls,
+      # so the check does not depend on external sites staying up.
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress '**/*.md'
+          fail: true
+
+  dependencies:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - name: Audit UI npm dependencies
+        working-directory: ui
+        run: |
+          npm ci
+          # Gate production dependencies strictly: those are what ship in an
+          # artifact. The UI has no production dependencies (all are
+          # devDependencies), so this is the meaningful supply-chain boundary.
+          npm audit --omit=dev --audit-level=high
+          # Report dev-only advisories without failing the build. Dev tooling
+          # (e.g. tailwindcss' file watcher) is not shipped to the device or the
+          # served bundle, and some advisories have no patched release yet.
+          npm audit --audit-level=high || echo "::warning::Dev-only npm advisories present (not shipped)."
+      - name: Audit Agent NuGet dependencies
+        shell: pwsh
+        run: |
+          $out = dotnet list tools/Agent/Agent.csproj package --vulnerable --include-transitive
+          $out
+          if ($out -match 'has the following vulnerable packages') {
+            throw 'Vulnerable NuGet packages found.'
+          }
+
+  clang-tidy:
+    name: C/C++ (clang-tidy)
+    # Advisory only (cppcheck is the blocking C/C++ check), so it runs weekly /
+    # on demand rather than on every push.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+      - name: Build for compile commands
+        run: pio run -e LILYGO-T-Dongle-S3
+      # clang-tidy emits many framework/macro-level diagnostics on Arduino
+      # sources, so it runs as an advisory report. cppcheck is the blocking
+      # C/C++ check.
+      - name: Run clang-tidy (advisory)
+        run: pio check -e LILYGO-T-Dongle-S3 --skip-packages --severity high
+
+  fuzz:
+    name: Fuzz (libFuzzer)
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Clang
+        run: sudo apt-get update && sudo apt-get install -y clang
+      - name: Build and run validation fuzz target
+        run: |
+          clang++ -std=c++17 -g -O1 -fsanitize=fuzzer,address \
+            -Ifuzz -Isrc/Comms/Web fuzz/validation_fuzz.cpp -o validation_fuzz
+          ./validation_fuzz -max_total_time=30 -rss_limit_mb=0 -print_final_stats=1
+      - name: Build and run CSRF token fuzz target
+        run: |
+          clang++ -std=c++17 -g -O1 -fsanitize=fuzzer,address \
+            -Ifuzz fuzz/csrf_fuzz.cpp -o csrf_fuzz
+          ./csrf_fuzz -max_total_time=30 -rss_limit_mb=0 -print_final_stats=1
+      - name: Run GCC static analyzer over host groups
+        run: |
+          sudo apt-get install -y g++
+          python tests/static_analysis.py --strict
+      - name: Measure host-regression line coverage
+        run: |
+          cd tests
+          python coverage.py --min 80
+
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    # By far the most expensive job; runs weekly / on demand instead of on
+    # every push to keep Actions usage inside the free tier.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # Runs the CodeQL analysis on private repositories too: upload:false skips
+    # the Security tab upload, which is what needs GitHub Advanced Security.
+    # The SARIF result is kept as a build artifact instead.
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { language: python, build-mode: none }
+          - { language: javascript-typescript, build-mode: none }
+          - { language: csharp, build-mode: manual }
+          - { language: c-cpp, build-mode: manual }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+      - name: Build Agent for CodeQL
+        if: matrix.language == 'csharp'
+        run: dotnet build tools/Agent/Agent.csproj --configuration Release
+      - name: Build firmware for CodeQL
+        if: matrix.language == 'c-cpp'
+        run: |
+          pip install --upgrade platformio
+          pio run -e LILYGO-T-Dongle-S3
+      - uses: github/codeql-action/analyze@v4
+        with:
+          upload: false
+          output: sarif-results
+      - uses: actions/upload-artifact@v7
+        with:
+          name: codeql-${{ matrix.language }}
+          path: sarif-results

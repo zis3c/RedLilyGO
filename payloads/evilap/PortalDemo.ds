@@ -1,0 +1,18 @@
+REM RedLilyGO - Evil Portal demo launcher. Authorized, isolated use only.
+REM
+REM This starts a Marauder captive portal on the board's own AP so a tester can
+REM connect to the SSID and open the demonstration page.
+REM
+REM 1) Copy the page you want to the SD card under /Portal/ first, for example:
+REM      /Portal/redlilygo-demo.html   fixed dummy values (demo@example.test / DEMO_ONLY)
+REM      /Portal/mamakwifi.html       generic Mamak WiFi layout (no real branding)
+REM      /Portal/campus-terms.html    generic campus WiFi terms layout (no real branding)
+REM      /Portal/campus-status.html   generic hotspot status page (synthetic session data)
+REM 2) Edit the two lines below to select the template (-w path) and the SSID (-n name).
+REM    Add -p <password> for a WPA2 AP (8-63 chars); leave -p out for an open AP.
+REM 3) Run this .ds from the dashboard payload list, or as /autorun.ds at boot.
+
+WEB_OFF
+ESP32M ssid -a -n RedLilyGO-Demo
+ESP32M evilportal -c start -w /Portal/redlilygo-demo.html
+REM ESP32M evilportal -c start -w /Portal/redlilygo-demo.html -p rahsia123

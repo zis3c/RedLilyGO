@@ -1,0 +1,44 @@
+                <!-- Help, diagnostics, and project information. -->
+                <div id="tab-7" class="tab-pane space-y-5">
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-shield text-lg"></i></div>
+                            <div>
+                                <p class="text-[13px] text-zinc-200 font-medium">Security Audit Report</p>
+                                <p class="text-[12px] text-zinc-500">Summarize scans, captures, and detections into a downloadable file</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.generateReport()" class="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shrink-0"><i class="fa-solid fa-download text-[11px]"></i> Generate Report</button>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl">
+                        <div class="px-5 py-3.5 text-[14px] font-medium text-zinc-200 flex items-center gap-2"><i class="fa-solid fa-book-bookmark text-zinc-500 text-[11px] mt-[1.5px]"></i> Resources</div>
+                        <div class="divide-y divide-zinc-800">
+                            <a href="https://docs.hak5.org/hak5-usb-rubber-ducky/duckyscript-tm-quick-reference" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-book text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">DuckyScript Quick Reference</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/zis3c/RedLilyGO#readme" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-file-lines text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">Documentation</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/zis3c/RedLilyGO/issues" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-bug text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">GitHub Issues</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                            <a href="https://github.com/justcallmekoko/ESP32Marauder/wiki" target="_blank" class="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/50 transition-colors group">
+                                <div class="flex items-center gap-3"><i class="fa-solid fa-shield text-zinc-600 group-hover:text-red-500 text-sm transition-colors w-4 text-center"></i><span class="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors">ESP32 Marauder Wiki</span></div>
+                                <i class="fa-solid fa-arrow-right text-[10px] text-zinc-700 group-hover:text-zinc-400 transition-all group-hover:translate-x-0.5"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-[13px] text-zinc-400 space-y-2">
+                        <p>
+                            <strong class="text-zinc-200">RedLilyGO</strong> is created by
+                            <a href="https://github.com/zis3c/RedLilyGO" target="_blank" class="text-red-500 hover:text-red-400 font-medium transition-colors">zis3c</a>.
+                        </p>
+                        <p class="text-[12px] text-zinc-500">
+                            Based on the original USBArmyKnife project by
+                            <a href="https://github.com/i-am-shodan/USBArmyKnife" target="_blank" class="text-zinc-300 hover:text-white font-medium transition-colors whitespace-nowrap">i-am-shodan</a>.
+                        </p>
+                    </div>
+                </div>

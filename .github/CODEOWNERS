@@ -1,0 +1,15 @@
+# Default owners. Update as additional maintainers join (see CONTRIBUTING.md).
+# Until then this file records the intended review boundary, not multiple people.
+*                       @zis3c
+
+# Security-sensitive surfaces deserve explicit review.
+SECURITY.md             @zis3c
+docs/SECURITY_AUDIT.md  @zis3c
+docs/PENTEST_PLAN.md    @zis3c
+src/Comms/Web/          @zis3c
+src/Devices/USB/        @zis3c
+
+# Generated trees and their sources.
+ui/src/                 @zis3c
+ui/content/             @zis3c
+src/html/               @zis3c

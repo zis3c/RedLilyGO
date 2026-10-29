@@ -1,0 +1,2 @@
+REM RedLilyGO - Linux Bad Filesystem. Mounts /badfs.img read-only; may panic vulnerable Linux hosts. Authorized testing only.
+USB_MOUNT_DISK_READ_ONLY /badfs.img

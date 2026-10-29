@@ -1,0 +1,7 @@
+REM RedLilyGO - Rickroll Keys (Windows HID). Opens the Rickroll URL via Win+R. Authorized testing only.
+DELAY 1000
+GUI r
+DELAY 1000
+STRING https://www.youtube.com/watch?v=dQw4w9WgXcQ
+DELAY 1000
+ENTER
