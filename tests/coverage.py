@@ -11,7 +11,6 @@ Usage:
 """
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
@@ -70,16 +69,13 @@ def collect(compiler, directory):
     env = dict(os.environ)
     env["PATH"] = str(Path(compiler).resolve().parent) + os.pathsep + env.get("PATH", "")
     covered = {}
-    for gcda in Path(directory).glob("*.gcda"):
-        result = subprocess.run(
+    for gcda in sorted(Path(directory).glob("*.gcda")):
+        subprocess.run(
             ["gcov", "-b", "-c", "-o", str(gcda.parent), str(gcda)],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             cwd=directory, env=env, timeout=120,
         )
-        # Fall back to the summary if .gcov files are not produced.
-        for match in re.finditer(r"File '([^']+)'\nLines executed:([\d.]+)% of (\d+)", result.stdout):
-            pass
-    for gcov_file in Path(directory).glob("*.gcov"):
+    for gcov_file in sorted(Path(directory).glob("*.gcov")):
         source = gcov_file.name[:-5]
         if source in ("stdout", "stderr"):
             continue
@@ -101,14 +97,16 @@ def main():
     totals = [0, 0]
     with tempfile.TemporaryDirectory(prefix="redlilygo-coverage-") as directory:
         for name, code in groups():
-            cpp = Path(directory) / (name + ".cpp")
-            binary = Path(directory) / (name + ".exe")
+            group_dir = Path(directory) / name
+            group_dir.mkdir()
+            cpp = group_dir / (name + ".cpp")
+            binary = group_dir / (name + ".exe")
             cpp.write_text(code, encoding="utf-8")
             subprocess.run([compiler, "-std=c++17", "-pthread", "--coverage",
                             str(cpp), "-o", str(binary)],
                            check=True, env=env, timeout=120)
             subprocess.run([str(binary)], check=True, env=env, timeout=30)
-            covered = collect(compiler, directory)
+            covered = collect(compiler, group_dir)
             lines = sum(e for e, _ in covered.values())
             total = sum(t for _, t in covered.values())
             pct = (lines * 100.0 / total) if total else 0.0
